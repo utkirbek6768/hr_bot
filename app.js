@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 mongoose
   .connect(
-    "mongodb+srv://utkirbektoirov6768:bi2TS19eYQc7UPEB@cluster0.mxzndvs.mongodb.net/?retryWrites=true&w=majority"
+    "mongodb+srv://utkirbektoirov6768:NR2Fmipx20XWwJi6@cluster0.mxzndvs.mongodb.net/?retryWrites=true&w=majority"
   )
   .then(() => {
     console.log("DB connected!");
