@@ -181,7 +181,7 @@ const t = (title) => {
   return title;
 };
 
-t("aaaddd");
+t("aaa");
 
 // "uzbekcha tarjima"
 

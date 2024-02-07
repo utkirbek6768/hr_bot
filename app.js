@@ -1,12 +1,13 @@
 const fs = require("fs");
 const https = require("https");
 const path = require("path");
+const dotenv = require("dotenv");
+dotenv.config();
 const TelegramBot = require("node-telegram-bot-api");
 const TelegramBotToken = "6982482174:AAHJBNUrfKH1EYZUbdy_lLbv_VhmezAmUh8";
 const bot = new TelegramBot(TelegramBotToken, { polling: true });
 const mongoose = require("mongoose");
 const express = require("express");
-const dotenv = require("dotenv");
 const functions = require("./myFunction/function.js");
 const {
   registerStart,
@@ -28,9 +29,18 @@ const { title } = require("process");
 const { log } = require("console");
 const { type } = require("os");
 const app = express();
-dotenv.config();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+// mongoose
+//   .connect(
+//     "mongodb+srv://utkirbektoirov6768:bi2TS19eYQc7UPEB@cluster0.mxzndvs.mongodb.net/?retryWrites=true&w=majority"
+//   )
+//   .then(() => {
+//     console.log("DB connected!");
+//   })
+//   .catch(() => {
+//     console.log("DB connection error: ");
+//   });
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -45,8 +55,8 @@ mongoose
 // const adminChatId = 1259604390;  // o'zim 2
 // const adminChatId = 545050591; // Hikmatillo
 // const adminChatId = 685051853; // Jaloldinaka
-const adminChatId = 177482674; // o'zim
-const admins = [177482674]; // adminlar
+const adminChatId = 177482674;
+const admins = [177482674];
 let perPage = 4;
 const markupsText = [
   "/start",
@@ -110,11 +120,13 @@ let firstFalsyKey = null;
 
 const genericStep = async (question) => {
   try {
-    const plainObject = question.toObject();
-    for (const key in plainObject) {
-      if (!plainObject[key]) {
-        firstFalsyKey = key;
-        break;
+    if (question) {
+      const plainObject = question.toObject();
+      for (const key in plainObject) {
+        if (!plainObject[key]) {
+          firstFalsyKey = key;
+          break;
+        }
       }
     }
   } catch (error) {
@@ -154,7 +166,7 @@ bot.on("message", async (msg) => {
       }
     });
   } catch (err) {
-    console.error("Error processing message:", err);
+    console.log("Error processing message:", err);
   }
 });
 
@@ -165,7 +177,7 @@ bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const fullName = msg.from.first_name;
     changeQuestionStatus(chatId, "pending");
-    await bot.deleteMessage(chatId, msg.message_id);
+    // await bot.deleteMessage(chatId, msg.message_id);
     functions.createCondidate(chatId, fullName);
     functions.createQuestion(chatId);
 
