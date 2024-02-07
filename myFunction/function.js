@@ -51,22 +51,17 @@ const createForm = async () => {
       ],
     });
 
-    // Find existing forms with the specified field step
     const existingForms = await Form.find({
       "fields.step": "academicDegree",
     });
 
     if (existingForms && existingForms.length > 0) {
-      // Delete existing forms with the specified field step
       await Form.deleteMany({ "fields.step": "academicDegree" });
     }
 
-    // Save the new form
     await newForm.save();
-    console.log("Form created successfully.");
   } catch (error) {
     console.error("Error creating form:", error);
-    // Handle the error as needed (e.g., log, send notification, etc.)
   }
 };
 
@@ -243,7 +238,6 @@ const createQuestion = async (chatId) => {
     return questionnaire;
   } catch (error) {
     console.error("An error occurred:", error);
-    throw error;
   }
 };
 
@@ -255,10 +249,9 @@ const updateCondidate = async (bot, collection, id, chatId, item, value) => {
       .then(async (res) => {
         await bot.sendMessage(
           res.chatId,
-          `
-        		👨🏻‍💻Arizangiz bo'yicha o'zgarish
-
-        		📄 Ariza holati: ${
+          `👨🏻‍💻Arizangiz bo'yicha o'zgarish` +
+            "\n\n" +
+            `📄 Ariza holati: ${
               res.status === "cancellation"
                 ? "Arizangiz bekorqilindi"
                 : res.status === "interview"
@@ -266,14 +259,13 @@ const updateCondidate = async (bot, collection, id, chatId, item, value) => {
                 : res.status === "hiring"
                 ? "Siz ishga qabul qilindingiz"
                 : "Ko'rib chiqilishi kutilmoqda"
-            }
-        		🕑Taxrirlangan vaqti: ${moment(res.updatedAt).format("DD.MM.YY")}
-        		`
+            }` +
+            "\n" +
+            `🕑Taxrirlangan vaqti: ${moment(res.updatedAt).format("DD.MM.YY")}`
         );
         await bot.sendMessage(
           chatId,
-          `
-				  - 📄 Ariza holati: ${
+          `📄 Ariza holati: ${
             res.status === "cancellation"
               ? "Ariza bekorqilindi"
               : res.status === "interview"
@@ -281,14 +273,13 @@ const updateCondidate = async (bot, collection, id, chatId, item, value) => {
               : res.status === "hiring"
               ? "Arizachi ishga qabul qilindi"
               : "Ko'rib chiqilishi kutilmoqda"
-          } ga o'zgartirildi
-
-		🕑 Taxrirlangan vaqti: ${moment(res.updatedAt).format("DD.MM.YY")}
-				  `
+          } ga o'zgartirildi` +
+            "\n\n" +
+            `🕑 Taxrirlangan vaqti: ${moment(res.updatedAt).format("DD.MM.YY")}`
         );
       });
   } catch (err) {
-    throw err;
+    console.log(err);
   }
 };
 const deleteData = async (bot, collection, dataId, chatId) => {
@@ -442,8 +433,6 @@ const handleCallback = async (bot, chatId, callbackData) => {
   }
 };
 
-//==================================================
-
 const issetAge = async (bot, age, chatId) => {
   const yoshRegex = /^(1[5-9]|[2-6]\d|70)$/;
   if (yoshRegex.test(age)) {
@@ -464,7 +453,7 @@ const addToQuestion = async (chatId, item, value) => {
     );
     return question;
   } catch (err) {
-    throw err;
+    console.log(err);
   }
 };
 const issetPhone = async (bot, phoneNumber, chatId, dataQuestion) => {
@@ -472,22 +461,29 @@ const issetPhone = async (bot, phoneNumber, chatId, dataQuestion) => {
   if (telefonRegex.test(phoneNumber)) {
     await bot.sendMessage(
       chatId,
-      `👤Sizning ma'lumotlaringiz.
-
-	  -Ismi: ${dataQuestion.fullName}
-	  -Yoshi: ${dataQuestion.age}
-	  -Manzili: ${dataQuestion.address}
-	  -Malumot darajasi: ${dataQuestion.academicDegree}
-	  -Tel: ${dataQuestion.phone}
-	  -Ariza holati: ${
-      dataQuestion.status === "cancellation"
-        ? "Arizangiz bekorqilindi"
-        : dataQuestion.status === "interview"
-        ? "Siz suxbatga chaqirildingiz"
-        : dataQuestion.status === "hiring"
-        ? "Siz ishga qabul qilindingiz"
-        : "Ko'rib chiqilishi kutilmoqda"
-    }
+      `👤Sizning ma'lumotlaringiz.` +
+        "\n" +
+        `\n-Ismi: ${dataQuestion.fullName}` +
+        "\n" +
+        `` +
+        "\n" +
+        `-Yoshi: ${dataQuestion.age}` +
+        "\n" +
+        `-Manzili: ${dataQuestion.address}` +
+        "\n" +
+        `-Malumot darajasi: ${dataQuestion.academicDegree}` +
+        "\n" +
+        `-Tel: ${dataQuestion.phone}` +
+        "\n" +
+        `-Ariza holati: ${
+          dataQuestion.status === "cancellation"
+            ? "Arizangiz bekorqilindi"
+            : dataQuestion.status === "interview"
+            ? "Siz suxbatga chaqirildingiz"
+            : dataQuestion.status === "hiring"
+            ? "Siz ishga qabul qilindingiz"
+            : "Ko'rib chiqilishi kutilmoqda"
+        }
 		  `,
       reform
     );
@@ -502,24 +498,29 @@ const sendingData = async (bot, collection, id, adminId) => {
   await collection.findOne({ _id: id }).then(async (res) => {
     await bot.sendMessage(
       adminId,
-      `
-		  👨🏻‍💻Nomzod haqida malumotlar
-
-		  🔠 Ismi: ${res.fullName}
-		  🔢 Yoshi: ${res.age}
-		  📍 Manzili: ${res.address}
-		  📚 Malumoti: ${res.academicDegree}
-		  📞 Tel: ${res.phone}
-		  🕑Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}
-		  📄 Ariza holati: ${
-        res.status === "cancellation"
-          ? "Arizangiz bekorqilindi"
-          : res.status === "interview"
-          ? "Siz suxbatga chaqirildingiz"
-          : res.status === "hiring"
-          ? "Siz ishga qabul qilindingiz"
-          : "Ko'rib chiqilishi kutilmoqda"
-      }
+      `👨🏻‍💻Nomzod haqida malumotlar` +
+        "\n\n" +
+        `🔠 Ismi: ${res.fullName}` +
+        "\n" +
+        `🔢 Yoshi: ${res.age}` +
+        "\n" +
+        `📍 Manzili: ${res.address}` +
+        "\n" +
+        `📚 Malumoti: ${res.academicDegree}` +
+        "\n" +
+        `📞 Tel: ${res.phone}` +
+        "\n" +
+        `🕑Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}` +
+        "\n" +
+        `📄 Ariza holati: ${
+          res.status === "cancellation"
+            ? "Arizangiz bekorqilindi"
+            : res.status === "interview"
+            ? "Siz suxbatga chaqirildingiz"
+            : res.status === "hiring"
+            ? "Siz ishga qabul qilindingiz"
+            : "Ko'rib chiqilishi kutilmoqda"
+        }
 		  `,
       {
         reply_markup: JSON.stringify({
@@ -628,7 +629,7 @@ const sendingVacancies = async (bot, chatId, code) => {
         );
       }
     } catch (error) {
-      console.error("Error sending image:", error);
+      console.log("Error sending image:", error);
     }
   });
 };
@@ -682,7 +683,7 @@ const sendingVacanciesAll = async (bot, chatId) => {
 
     await Promise.all(sendPhotoPromises);
   } catch (error) {
-    console.error("Error sending images:", error);
+    console.log("Error sending images:", error);
   }
 };
 
@@ -741,7 +742,7 @@ const vacanciesAll = async (bot, elementsPerPage, prevORnext, chatId) => {
       await bot.sendMessage(chatId, `Hozircha vakansiyalar mavjud emas`);
     }
   } catch (error) {
-    console.log("============================>", error);
+    console.log("This error message", error);
   }
 };
 
@@ -753,91 +754,95 @@ const fetchAll = async (
   chatId,
   status
 ) => {
-  const currentPage = changePage(prevORnext);
-  const totalCount = await collection.countDocuments({ status: status });
-  const skipElements = currentPage * elementsPerPage;
-  const response = await collection
-    .find({ status: status })
-    .sort({ createdAt: -1 })
-    .skip(skipElements)
-    .limit(elementsPerPage);
-  if (condidatCount >= totalCount || currentPage <= 0) {
-    condidatCount = elementsPerPage;
-  } else {
-    condidatCount += response.length;
-  }
-  if (response.length > 0) {
-    let conIndex = 1;
-    let conData = "";
-    const elements = response.map((el) => {
-      if (el.document) {
-        return {
-          text: `${conIndex}`,
-          callback_data: JSON.stringify({
-            command: "prev",
-            value: `${el._id}`,
-          }),
-        };
-      } else {
-        conData =
-          conData +
-          conIndex +
-          " ). " +
-          el.fullName +
-          " | " +
-          el.age +
-          " | " +
-          el.phone +
-          " | " +
-          el.academicDegree +
+  try {
+    const currentPage = changePage(prevORnext);
+    const totalCount = await collection.countDocuments({ status: status });
+    const skipElements = currentPage * elementsPerPage;
+    const response = await collection
+      .find({ status: status })
+      .sort({ createdAt: -1 })
+      .skip(skipElements)
+      .limit(elementsPerPage);
+    if (condidatCount >= totalCount || currentPage <= 0) {
+      condidatCount = elementsPerPage;
+    } else {
+      condidatCount += response.length;
+    }
+    if (response.length > 0) {
+      let conIndex = 1;
+      let conData = "";
+      const elements = response.map((el) => {
+        if (el.document) {
+          return {
+            text: `${conIndex}`,
+            callback_data: JSON.stringify({
+              command: "prev",
+              value: `${el._id}`,
+            }),
+          };
+        } else {
+          conData =
+            conData +
+            conIndex +
+            " ). " +
+            el.fullName +
+            " | " +
+            el.age +
+            " | " +
+            el.phone +
+            " | " +
+            el.academicDegree +
+            "\n" +
+            "\n";
+          const element = {
+            text: `${conIndex}`,
+            callback_data: JSON.stringify({
+              command: "sendOne",
+              value: `${el._id}`,
+            }),
+          };
+          conIndex++;
+          return element;
+        }
+      });
+      conIndex = 0;
+      await bot.sendMessage(
+        chatId,
+        `${
+          skipElements + perPage >= totalCount
+            ? totalCount
+            : skipElements + response.length
+        }/${totalCount}` +
           "\n" +
-          "\n";
-        const element = {
-          text: `${conIndex}`,
-          callback_data: JSON.stringify({
-            command: "sendOne",
-            value: `${el._id}`,
+          "\n" +
+          `${conData}`,
+        {
+          reply_markup: JSON.stringify({
+            inline_keyboard: [
+              elements,
+              skipElements + perPage < totalCount
+                ? nextPage
+                : skipElements + perPage === totalCount
+                ? nextPageEnd
+                : empty,
+            ],
           }),
-        };
-        conIndex++;
-        return element;
-      }
-    });
-    conIndex = 0;
-    await bot.sendMessage(
-      chatId,
-      `${
-        skipElements + perPage >= totalCount
-          ? totalCount
-          : skipElements + response.length
-      }/${totalCount}` +
-        "\n" +
-        "\n" +
-        `${conData}`,
-      {
-        reply_markup: JSON.stringify({
-          inline_keyboard: [
-            elements,
-            skipElements + perPage < totalCount
-              ? nextPage
-              : skipElements + perPage === totalCount
-              ? nextPageEnd
-              : empty,
-          ],
-        }),
-      }
-    );
-  } else {
-    const statusMessage =
-      status === "cancellation"
-        ? "Bekorqilingan"
-        : status === "interview"
-        ? "Suxbatga chaqirilgan"
-        : status === "hiring"
-        ? "Ishga qabul qilingan"
-        : "yangi";
+        }
+      );
+    } else {
+      const statusMessage =
+        status === "cancellation"
+          ? "Bekorqilingan"
+          : status === "interview"
+          ? "Suxbatga chaqirilgan"
+          : status === "hiring"
+          ? "Ishga qabul qilingan"
+          : "yangi";
 
-    bot.sendMessage(chatId, `Hozircha ${statusMessage} arizalar mavjud emas`);
+      bot.sendMessage(chatId, `Hozircha ${statusMessage} arizalar mavjud emas`);
+    }
+  } catch (error) {
+    console.log(error);
   }
 };
 
@@ -860,25 +865,21 @@ const sendToAdmins = async (bot, chatId, admins) => {
       .limit(1)
       .exec();
 
-    if (!res) {
-      console.log("No questionnaire found for the given chatId.");
-      return;
-    }
-
-    for (const adminId of admins) {
-      if (res.for == "taxi") {
-        await bot.sendMessage(
-          adminId,
-          `
-			  👨🏻‍💻Yangi ariza mavjud.
-
-			  🔠 Ismi: ${res.fullName}
-			  🔢 Yoshi: ${res.age}
-			  📍 Manzili: ${res.address}
-			  📚 Malumoti: ${res.academicDegree}
-			  📞 Tel: ${res.phone}
-			  🕑 Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}
-			  📄 Ariza holati: ${
+    if (res) {
+      for (const adminId of admins) {
+        if (res.for == "taxi") {
+          await bot.sendMessage(
+            adminId,
+            `
+				👨🏻‍💻Yangi ariza mavjud.
+  
+				🔠 Ismi: ${res.fullName}
+				🔢 Yoshi: ${res.age}
+				📍 Manzili: ${res.address}
+				📚 Malumoti: ${res.academicDegree}
+				📞 Tel: ${res.phone}
+				🕑 Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}
+				📄 Ariza holati: ${
           res.status === "cancellation"
             ? "Arizangiz bekorqilindi"
             : res.status === "interview"
@@ -887,8 +888,63 @@ const sendToAdmins = async (bot, chatId, admins) => {
             ? "Siz ishga qabul qilindingiz"
             : "Ko'rib chiqilishi kutilmoqda"
         }
-			  `,
-          {
+				`,
+            {
+              reply_markup: JSON.stringify({
+                inline_keyboard: [
+                  [
+                    {
+                      text: "Bekor qilindi",
+                      callback_data: JSON.stringify({
+                        command: "cancellation",
+                        value: res._id,
+                      }),
+                    },
+                    {
+                      text: "Suxbatga chaqirildi",
+                      callback_data: JSON.stringify({
+                        command: "interview",
+                        value: res._id,
+                      }),
+                    },
+                  ],
+                  [
+                    {
+                      text: "Ishga qaul qilindi",
+                      callback_data: JSON.stringify({
+                        command: "hiring",
+                        value: res._id,
+                      }),
+                    },
+                  ],
+                ],
+              }),
+            }
+          );
+        } else {
+          const filePath = res.photo;
+          await bot.sendPhoto(adminId, filePath, {
+            caption: `👨🏻‍💻Yangi ariza mavjud.
+  
+			  -Ismi: ${res.fullName}
+			  -Yoshi: ${res.age}
+			  -Manzili: ${res.address}
+			  -Malumot darajasi: ${res.academicDegree}
+			  -Tel: ${res.phone}
+			  -Qayerda o'qigani: ${res.whereDidYouStudy}
+			  -Qayerda ishlagani: ${res.whereDidYouWork}
+			  -Kompaniya: ${
+          res.for == "pharmacy" ? "Oilaviy dorihonaga" : "Enter o'quv markaziga"
+        }
+			  -Ariza holati: ${
+          res.status === "cancellation"
+            ? "Arizangiz bekorqilindi"
+            : res.status === "interview"
+            ? "Siz suxbatga chaqirildingiz"
+            : res.status === "hiring"
+            ? "Siz ishga qabul qilindingiz"
+            : "Ko'rib chiqilishi kutilmoqda"
+        }`,
             reply_markup: JSON.stringify({
               inline_keyboard: [
                 [
@@ -918,66 +974,12 @@ const sendToAdmins = async (bot, chatId, admins) => {
                 ],
               ],
             }),
-          }
-        );
-      } else {
-        const filePath = res.photo;
-        await bot.sendPhoto(adminId, filePath, {
-          caption: `👨🏻‍💻Yangi ariza mavjud.
-
-			-Ismi: ${res.fullName}
-			-Yoshi: ${res.age}
-			-Manzili: ${res.address}
-			-Malumot darajasi: ${res.academicDegree}
-			-Tel: ${res.phone}
-			-Qayerda o'qigani: ${res.whereDidYouStudy}
-			-Qayerda ishlagani: ${res.whereDidYouWork}
-			-Kompaniya: ${
-        res.for == "pharmacy" ? "Oilaviy dorihonaga" : "Enter o'quv markaziga"
-      }
-			-Ariza holati: ${
-        res.status === "cancellation"
-          ? "Arizangiz bekorqilindi"
-          : res.status === "interview"
-          ? "Siz suxbatga chaqirildingiz"
-          : res.status === "hiring"
-          ? "Siz ishga qabul qilindingiz"
-          : "Ko'rib chiqilishi kutilmoqda"
-      }`,
-          reply_markup: JSON.stringify({
-            inline_keyboard: [
-              [
-                {
-                  text: "Bekor qilindi",
-                  callback_data: JSON.stringify({
-                    command: "cancellation",
-                    value: res._id,
-                  }),
-                },
-                {
-                  text: "Suxbatga chaqirildi",
-                  callback_data: JSON.stringify({
-                    command: "interview",
-                    value: res._id,
-                  }),
-                },
-              ],
-              [
-                {
-                  text: "Ishga qaul qilindi",
-                  callback_data: JSON.stringify({
-                    command: "hiring",
-                    value: res._id,
-                  }),
-                },
-              ],
-            ],
-          }),
-        });
+          });
+        }
       }
     }
   } catch (err) {
-    console.error("Error in sendToAdmins:", err);
+    console.log("Error in sendToAdmins:", err);
   }
 };
 
@@ -987,8 +989,8 @@ const deleteMsgAll = async (bot, chatId, msgCount) => {
   for (let i = msgCount; i >= msgLimit; i--) {
     try {
       await bot.deleteMessage(chatId, i);
-    } catch (deleteError) {
-      return deleteError;
+    } catch (err) {
+      console.log(err);
     }
   }
 };
@@ -1002,7 +1004,6 @@ const fetchQuestion = async (chatId) => {
     return result;
   } catch (error) {
     console.error("Error fetching question:", error.message);
-    throw error;
   }
 };
 
@@ -1012,7 +1013,6 @@ const fetchForm = async () => {
     return results;
   } catch (error) {
     console.error("Error fetching forms:", error.message);
-    throw error;
   }
 };
 
@@ -1038,7 +1038,7 @@ const updateQuestion = async (id, item1, value1, item2, value2) => {
     ) {
       return resultAfterUpdate;
     } else {
-      throw new Error("Update verification failed.");
+      console.log("function updateQuestion: Update verification failed.");
     }
   } catch (err) {
     console.log("Update failed:", err);
@@ -1068,7 +1068,7 @@ const updateQuestionItem = async (id, item, value) => {
     if (resultAfterUpdate && resultAfterUpdate[item] === value) {
       return resultAfterUpdate;
     } else {
-      throw new Error("Update verification failed.");
+      console.log("function updateQuestionItem: Update verification failed.");
     }
   } catch (err) {
     console.log("Update failed:", err);
@@ -1097,7 +1097,7 @@ const updateQuestionStep = async (id, item1, value1, item2, value2) => {
     ) {
       return resultAfterUpdate;
     } else {
-      throw new Error("Update verification failed.");
+      console.log("Update verification failed.");
     }
   } catch (err) {
     console.log("Update failed:", err);
@@ -1105,6 +1105,7 @@ const updateQuestionStep = async (id, item1, value1, item2, value2) => {
 };
 
 module.exports = {
+  updateQuestionStep,
   exprement,
   createCondidate,
   updateCondidate,
