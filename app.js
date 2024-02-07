@@ -24,31 +24,27 @@ const {
 const Questionnaire = require("./modelsSchema/questionnaire.schema.js");
 const Vacancies = require("./modelsSchema/vacancies.schema.js");
 const Form = require("./modelsSchema/form.schema.js");
-const { AutoEncryptionLoggerLevel } = require("mongodb");
-const { title } = require("process");
-const { log } = require("console");
-const { type } = require("os");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-// mongoose
-//   .connect(
-//     "mongodb+srv://utkirbektoirov6768:bi2TS19eYQc7UPEB@cluster0.mxzndvs.mongodb.net/?retryWrites=true&w=majority"
-//   )
-//   .then(() => {
-//     console.log("DB connected!");
-//   })
-//   .catch(() => {
-//     console.log("DB connection error: ");
-//   });
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(
+    "mongodb+srv://utkirbektoirov6768:bi2TS19eYQc7UPEB@cluster0.mxzndvs.mongodb.net/?retryWrites=true&w=majority"
+  )
   .then(() => {
     console.log("DB connected!");
   })
   .catch(() => {
     console.log("DB connection error: ");
   });
+// mongoose
+//   .connect(process.env.MONGO_URI)
+//   .then(() => {
+//     console.log("DB connected!");
+//   })
+//   .catch(() => {
+//     console.log("DB connection error: ");
+//   });
 
 // =============MY CONCTANTS=============
 // const adminChatId = 6625548114; // hr manager
