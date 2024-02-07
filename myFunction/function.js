@@ -1103,7 +1103,7 @@ const updateQuestionStep = async (id, item1, value1, item2, value2) => {
     console.log("Update failed:", err);
   }
 };
-
+// ssh uMidjon123A@167.99.243.112
 module.exports = {
   updateQuestionStep,
   exprement,

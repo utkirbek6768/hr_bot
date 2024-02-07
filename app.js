@@ -35,8 +35,8 @@ mongoose
   .then(() => {
     console.log("DB connected!");
   })
-  .catch(() => {
-    console.log("DB connection error: ");
+  .catch((err) => {
+    console.log("DB connection error:", err);
   });
 // mongoose
 //   .connect(process.env.MONGO_URI)
