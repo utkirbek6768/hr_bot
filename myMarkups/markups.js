@@ -5,12 +5,16 @@ const remove = {
 };
 const adminHome = {
   reply_markup: {
+    resize_keyboard: true,
+    one_time_keyboard: true,
     keyboard: [[{ text: "Vakansiyalar" }], [{ text: "Arizalar" }]],
   },
 };
 
 const vacanciesHome = {
   reply_markup: {
+    resize_keyboard: true,
+    one_time_keyboard: true,
     keyboard: [
       [{ text: "Amaldagi_vakansiyalar" }],
       [{ text: "Vakansiya_yaratish" }],
@@ -21,6 +25,8 @@ const vacanciesHome = {
 
 const questionarieStatus = {
   reply_markup: {
+    resize_keyboard: true,
+    one_time_keyboard: true,
     keyboard: [
       [{ text: "/Yangi_arizalar" }, { text: "/Bekor_qilingan" }],
       [{ text: "/Suxbatga_chaqirilgan" }, { text: "/Qabul_qilingan" }],
@@ -31,6 +37,8 @@ const questionarieStatus = {
 
 const vacancies = {
   reply_markup: {
+    resize_keyboard: true,
+    one_time_keyboard: true,
     keyboard: [
       [{ text: "RoyalTaxi" }],
       [{ text: "Apteka" }],
@@ -40,6 +48,8 @@ const vacancies = {
 };
 const addQuestion = {
   reply_markup: JSON.stringify({
+    resize_keyboard: true,
+    one_time_keyboard: true,
     keyboard: [[{ text: "Ariza_tofshirish" }], [{ text: "Mening_arizalarim" }]],
   }),
 };

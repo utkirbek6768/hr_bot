@@ -3,9 +3,11 @@ const https = require("https");
 const path = require("path");
 const dotenv = require("dotenv");
 dotenv.config();
+const LocalStorage = require("node-localstorage").LocalStorage;
+const localStorage = new LocalStorage("./scratch");
 const TelegramBot = require("node-telegram-bot-api");
-const TelegramBotToken = "6982482174:AAHJBNUrfKH1EYZUbdy_lLbv_VhmezAmUh8";
-const bot = new TelegramBot(TelegramBotToken, { polling: true });
+const botToken = process.env.BOT_TOKEN;
+const bot = new TelegramBot(botToken, { polling: true });
 const mongoose = require("mongoose");
 const express = require("express");
 const functions = require("./myFunction/function.js");
@@ -29,9 +31,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 mongoose
-  .connect(
-    "mongodb+srv://utkirbektoirov6768:bi2TS19eYQc7UPEB@cluster0.mxzndvs.mongodb.net/?retryWrites=true&w=majority"
-  )
+  .connect(process.env.MONGO_URI_WEB)
   .then(() => {
     console.log("DB connected!");
   })
@@ -49,10 +49,10 @@ mongoose
 
 // =============MY CONCTANTS=============
 // const adminChatId = 6625548114; // hr manager
-// const adminChatId = 1259604390;  // o'zim 2
+const adminChatId = 1259604390; // o'zim 2
 // const adminChatId = 545050591; // Hikmatillo
 // const adminChatId = 685051853; // Jaloldinaka
-const adminChatId = 177482674;
+// const adminChatId = 177482674;
 const admins = [177482674];
 let perPage = 4;
 const markupsText = [
@@ -140,6 +140,11 @@ bot.on("message", async (msg) => {
   try {
     const chatId = msg.chat.id;
     const question = await functions.fetchQuestion(chatId);
+    // localStorage.setItem("step", chatId);
+    if (localStorage.getItem(chatId)) {
+      bot.sendMessage(chatId, localStorage.getItem(chatId));
+      localStorage.removeItem(chatId);
+    }
     genericStep(question);
     let forms = await functions.fetchForm();
     let nextMsg = null;
@@ -233,8 +238,8 @@ bot.onText(/Qaytish/, async (msg) => {
 bot.onText(/Vakansiyalar/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    await bot.sendMessage(chatId, "vakansiyalar", vacanciesHome);
     await bot.deleteMessage(chatId, msg.message_id);
+    await bot.sendMessage(chatId, "vakansiyalar", vacanciesHome);
   } catch (error) {
     console.error("An error occurred:", error);
   }
@@ -304,12 +309,10 @@ bot.onText(/RoyalTaxi/, async (msg) => {
 bot.onText(/Apteka/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    const delId = msg.message_id;
     await functions
       .fetchQuestion(chatId)
       .then(async (res) => {
-        // await bot.deleteMessage(chatId, delId - 1, remove);
-        // await bot.deleteMessage(chatId, delId, remove);
+        // await bot.deleteMessage(chatId, msg.message_id);
         await functions.sendingVacancies(bot, chatId, "pharmacy");
         functions.updateQuestion(res._id, "step", "start", "for", "pharmacy");
       })
