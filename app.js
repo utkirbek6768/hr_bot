@@ -131,6 +131,12 @@ const genericStep = async (question) => {
   }
 };
 
+// localStorage.setItem("step", chatId);
+// if (localStorage.getItem(chatId)) {
+//   bot.sendMessage(chatId, localStorage.getItem(chatId));
+//   localStorage.removeItem(chatId);
+// }
+
 // ======================Bot Event====================================
 
 bot.setMyCommands([{ command: "/start", description: "Start" }]);
@@ -140,33 +146,207 @@ bot.on("message", async (msg) => {
   try {
     const chatId = msg.chat.id;
     const question = await functions.fetchQuestion(chatId);
-    // localStorage.setItem("step", chatId);
-    if (localStorage.getItem(chatId)) {
-      bot.sendMessage(chatId, localStorage.getItem(chatId));
-      localStorage.removeItem(chatId);
-    }
     genericStep(question);
     let forms = await functions.fetchForm();
     let nextMsg = null;
     let field = null;
-    forms.forEach(async (form) => {
-      field = form.fields.shift();
-      if (question && question?.step === field.step) {
-        await functions
-          .updateQuestionItem(question._id, firstFalsyKey, msg.text)
-          .then(async (response) => {
-            genericStep(response);
-            await functions
-              .updateQuestionItem(question._id, "step", firstFalsyKey)
-              .then(async (natija) => {
-                if (field.step === natija.step) {
-                  nextMsg = field.msg;
-                  await bot.sendMessage(chatId, nextMsg);
-                }
-              });
-          });
-      }
-    });
+    functions
+      .fetchQuestion(chatId)
+      .then(async (res) => {
+        if (msg.text && msg.text !== "/start" && res?.step == "name") {
+          functions.updateQuestion(
+            res._id,
+            "step",
+            "age",
+            "firstName",
+            msg.text
+          );
+          await bot.sendMessage(
+            chatId,
+            "Iltimos yoshingizni kiriting. Yosh cheklovi 15 dan 70 gacha masalan: 28"
+          );
+        } else if (msg.text && res?.step && res?.step === "age") {
+          try {
+            const yoshRegex = /^(1[5-9]|[2-6]\d|70)$/;
+            if (yoshRegex.test(msg.text)) {
+              functions.updateQuestion(
+                res._id,
+                "step",
+                "address",
+                "age",
+                msg.text
+              );
+              await bot.sendMessage(chatId, "Iltimos manzilingizni kiriting");
+            } else {
+              await bot.sendMessage(
+                chatId,
+                "Qabul qilinmadi yoshingizni raqamda kiriting"
+              );
+            }
+          } catch (err) {
+            console.log(err);
+          }
+        } else if (msg.text && res?.step && res?.step === "address") {
+          try {
+            functions.updateQuestion(
+              res._id,
+              "step",
+              "phone",
+              "address",
+              msg.text
+            );
+            await bot.sendMessage(
+              chatId,
+              "Iltimos telefon raqamingizni kiriting"
+            );
+          } catch (err) {
+            console.log(err);
+          }
+        } else if (msg.text && res?.step && res?.step === "phone") {
+          try {
+            const telefonRegex =
+              /\?+998|998(?:73|90|91|93|94|95|97|98|99)[1-9]\d{6}/;
+            if (telefonRegex.test(msg.text) && res.for == "taxi") {
+              functions.updateQuestion(
+                res._id,
+                "step",
+                "academicDegree",
+                "phone",
+                msg.text
+              );
+              await bot.sendMessage(
+                chatId,
+                "Iltimos malumotingizni tanlagn",
+                academicDegree
+              );
+            } else if (telefonRegex.test(msg.text) && res.for !== "taxi") {
+              functions.updateQuestion(
+                res._id,
+                "step",
+                "whereDidYouStudy",
+                "phone",
+                msg.text
+              );
+              await bot.sendMessage(
+                chatId,
+                "Qayerda o'qigansiz? O'zingiz tamomlagan o'quv dargohini nomini va qachon o'qishni tamomlaganingizni kiriting"
+              );
+            } else {
+              await bot.sendMessage(
+                chatId,
+                `${msg.text} - Raqam qabul qilinmadi. Iltimos tekshirib qaytadan kiriting. Masalan: +998905376768`
+              );
+            }
+          } catch (err) {
+            console.log(err);
+          }
+        } else if (msg.text && res?.step && res?.step === "whereDidYouStudy") {
+          try {
+            functions.updateQuestion(
+              res._id,
+              "step",
+              "whereDidYouWork",
+              "whereDidYouStudy",
+              msg.text
+            );
+            await bot.sendMessage(
+              chatId,
+              "Birorjoyda ish tajribangiz bormi? Agar bo'lsa ishlagan joylaringiz haqida yozing."
+            );
+          } catch (err) {
+            console.log(err);
+          }
+        } else if (msg.text && res?.step && res?.step === "whereDidYouWork") {
+          try {
+            functions.updateQuestion(
+              res._id,
+              "step",
+              "photo",
+              "whereDidYouWork",
+              msg.text
+            );
+            await bot.sendMessage(
+              chatId,
+              "Iltimos o'zingizni suratingizni yuklang va forma tugaydi"
+            );
+          } catch (error) {
+            console.log(error);
+          }
+        } else if (msg.text && VS[chatId]?.step === "title") {
+          try {
+            changeVacanciesStatusForAdmins(chatId, "step2", "title", msg.text);
+            await bot.sendMessage(chatId, "Vakansiya test2 ni yozing");
+          } catch (error) {
+            console.log(error);
+          }
+        } else if (msg.text && VS[chatId]?.step === "step2") {
+          try {
+            changeVacanciesStatusForAdmins(chatId, "step3", "test2", msg.text);
+            await bot.sendMessage(chatId, "Vakansiya test3 ni yozing");
+          } catch (error) {
+            console.log(error);
+          }
+        } else if (msg.text && VS[chatId]?.step === "step3") {
+          try {
+            changeVacanciesStatusForAdmins(chatId, "step4", "test3", msg.text);
+            await bot.sendMessage(chatId, "Vakansiya test4 ni yozing");
+          } catch (error) {
+            console.log(error);
+          }
+        } else if (msg.text && VS[chatId]?.step === "step4") {
+          try {
+            changeVacanciesStatusForAdmins(
+              chatId,
+              "description",
+              "test4",
+              msg.text
+            );
+            await bot.sendMessage(chatId, "Vakansiya uchun tavsif yozing");
+          } catch (error) {
+            console.log(error);
+          }
+        } else if (msg.text && VS[chatId]?.step === "description") {
+          try {
+            changeVacanciesStatusForAdmins(
+              chatId,
+              "photo",
+              "description",
+              msg.text
+            );
+            console.log(VS[chatId]);
+            await bot.sendMessage(
+              chatId,
+              "Vakansiyaga mos keladigan 'code' ni tanlang bu vacansiyalarni boshqarish uchun kerak",
+              vacanciesCode
+            );
+          } catch (error) {
+            console.log(error);
+          }
+        } else {
+          try {
+            const isTextValid = markupsText.includes(msg.text);
+            if (!isTextValid) {
+              const step = res?.step;
+              if (step === "photo") {
+                await bot.deleteMessage(chatId, msg.message_id);
+              } else if (VS[chatId]?.step == "photo") {
+                console.log(VS[chatId]);
+              } else {
+                await bot.deleteMessage(chatId, msg.message_id);
+                await bot.sendMessage(
+                  chatId,
+                  "Iltimos 'bot' ko'rsatmalariga asosan harakat qiling. Agar nosozlik vujudga kelsa /start tugmasini bosib 'bot'ga qaytadan start bering"
+                );
+              }
+            }
+          } catch (error) {
+            console.error("Error handling invalid message:", error);
+          }
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   } catch (err) {
     console.log("Error processing message:", err);
   }
@@ -179,6 +359,7 @@ bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     const fullName = msg.from.first_name;
     changeQuestionStatus(chatId, "pending");
+    changeVacanciesStatusForAdmins(chatId, "start");
     // await bot.deleteMessage(chatId, msg.message_id);
     functions.createCondidate(chatId, fullName);
     functions.createQuestion(chatId);
@@ -261,7 +442,7 @@ bot.onText(/Amaldagi_vakansiyalar/, async (msg) => {
 bot.onText(/Vakansiya_yaratish/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    await bot.deleteMessage(chatId, msg.message_id);
+    // await bot.deleteMessage(chatId, msg.message_id);
     await bot.sendMessage(chatId, "Vacansiya nomini kiriting", remove);
     changeVacanciesStatusForAdmins(chatId, "title");
   } catch (error) {
@@ -616,7 +797,7 @@ bot.on("callback_query", async (msg) => {
             console.log(VS[chatId]);
             await bot.sendMessage(
               chatId,
-              "Vakansiyaga mos keladigan rasim yuklang. Rasim kengaytmasi 'jpg' ekanligiga etibor berig!"
+              "Vakansiyaga mos keladigan rasim yuklang. Rasim kengaytmasi 'jpg' ekanligiga etibor berig! Masalan: rasim.jpg"
             );
           } catch (error) {
             console.log(error);

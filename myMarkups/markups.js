@@ -153,7 +153,7 @@ const vacanciesIn = {
       ],
       [
         {
-          text: "Oilkaviy Aptekaga Sotuvchilik",
+          text: "Oilaviy Aptekaga Sotuvchilik",
           callback_data: JSON.stringify({
             command: "showVacancies",
             value: "pharmacy",
@@ -172,6 +172,41 @@ const vacanciesIn = {
     ],
   }),
 };
+
+const vacanciesCode = {
+  reply_markup: JSON.stringify({
+    inline_keyboard: [
+      [
+        {
+          text: "RoyalTaxi ga Dispecherlik uchun",
+          callback_data: JSON.stringify({
+            command: "vacanciesCode",
+            value: "taxi",
+          }),
+        },
+      ],
+      [
+        {
+          text: "Oilaviy Aptekaga Sotuvchilik",
+          callback_data: JSON.stringify({
+            command: "vacanciesCode",
+            value: "pharmacy",
+          }),
+        },
+      ],
+      [
+        {
+          text: "Enter o'quv markaziga Ustozlik",
+          callback_data: JSON.stringify({
+            command: "vacanciesCode",
+            value: "teacher",
+          }),
+        },
+      ],
+    ],
+  }),
+};
+
 const registerStart = {
   reply_markup: JSON.stringify({
     inline_keyboard: [
@@ -251,6 +286,7 @@ module.exports = {
   empty,
   vacancies,
   vacanciesIn,
+  vacanciesCode,
   remove,
   adminHome,
   vacanciesHome,
