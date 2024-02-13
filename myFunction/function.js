@@ -87,15 +87,15 @@ const createVacancies = async (bot, chatId, data) => {
         const options = {
           caption:
             "\n\n" +
-            `💰${title}` +
+            `${title}` +
             "\n\n" +
-            `✍️${test2}` +
+            `-${test2}` +
             "\n\n" +
-            `🌐${test3}` +
+            `-${test3}` +
             "\n\n" +
-            `🌐${test4}` +
+            `-${test4}` +
             "\n\n" +
-            `📚${description}`,
+            `-${description}`,
           reply_markup: JSON.stringify({
             inline_keyboard: [
               [
@@ -279,6 +279,7 @@ const updateCondidate = async (bot, collection, id, chatId, item, value) => {
         );
       });
   } catch (err) {
+    await bot.sendMessage(chatId, "Arizani o'chirib bo'lmadi.");
     console.log(err);
   }
 };
@@ -294,8 +295,6 @@ const deleteData = async (bot, collection, dataId, chatId) => {
       console.log(err);
     });
 };
-
-const IDS = [];
 
 const myQuestion = async (bot, chatId) => {
   try {
@@ -352,28 +351,24 @@ const myQuestion = async (bot, chatId) => {
                 ],
               }),
             });
-            if (msg && msg.message_id) {
-              IDS.push({ [el._id]: msg.message_id });
-            }
           } else {
+            // ${el.for == "taxi" ? "RoyalTaxi ga" : ""}
             msg = await bot.sendMessage(
               chatId,
-              `Sizning ${
-                el.for == "taxi" ? "RoyalTaxi ga" : ""
-              } amaldagi arizangiz` +
+              `Sizning amaldagi arizangiz` +
                 "\n" +
                 "\n" +
-                `🔢 Ismi: ${el?.fullName}` +
+                `- Ismi: ${el.fullName}` +
                 "\n" +
-                `🔠 Yoshi: ${el.age}` +
+                `- Yoshi: ${el.age}` +
                 "\n" +
-                `📍 Manzili: ${el.address}` +
+                `- Manzili: ${el.address}` +
                 "\n" +
-                `📚 Malumoti: ${el.academicDegree}` +
+                `- Malumoti: ${el.academicDegree}` +
                 "\n" +
-                `📞 Tel: ${el.phone}` +
+                `- Tel: ${el.phone}` +
                 "\n" +
-                `📄 Ariza holati: ${
+                `- Ariza holati: ${
                   el.status === "cancellation"
                     ? "Arizangiz bekorqilindi"
                     : el.status === "interview"
@@ -381,9 +376,11 @@ const myQuestion = async (bot, chatId) => {
                     : el.status === "hiring"
                     ? "Siz ishga qabul qilindingiz"
                     : "Ko'rib chiqilishi kutilmoqda"
-                }
-		  🕑Yaratilgan vaqti: ${moment(el.createdAt).format("DD.MM.YY")}
-				`,
+                }` +
+                "\n" +
+                `🕑Yaratilgan vaqti: ${moment(el.createdAt).format(
+                  "DD.MM.YY"
+                )}`,
               {
                 reply_markup: JSON.stringify({
                   inline_keyboard: [
@@ -400,9 +397,6 @@ const myQuestion = async (bot, chatId) => {
                 }),
               }
             );
-            if (msg && msg.message_id) {
-              IDS.push({ [el._id]: msg.message_id });
-            }
           }
         } catch (error) {
           console.error("Error sending message:", error);
@@ -411,25 +405,12 @@ const myQuestion = async (bot, chatId) => {
     } else {
       await bot.sendMessage(
         chatId,
-        "Hozirda sizda tugallangan arizalar yo'q.  Ariza qo'shish uchun 'Ariza_tofshirish' tugmasini bosing"
+        "Hozirda sizda tugallangan arizalar yo'q.  Ariza qo'shish uchun 'Ariza_tofshirish' tugmasini bosing",
+        addQuestion
       );
     }
   } catch (error) {
     console.error("Error fetching questionnaires:", error);
-  }
-};
-
-const handleCallback = async (bot, chatId, callbackData) => {
-  try {
-    for (const entry of IDS) {
-      const idToDelete = Object.keys(entry)[0];
-      if (idToDelete === callbackData) {
-        await bot.deleteMessage(chatId, entry[idToDelete]);
-        IDS.splice(IDS.indexOf(entry), 1);
-      }
-    }
-  } catch (error) {
-    console.error("Error handling callback:", error);
   }
 };
 
@@ -500,19 +481,19 @@ const sendingData = async (bot, collection, id, adminId) => {
       adminId,
       `👨🏻‍💻Nomzod haqida malumotlar` +
         "\n\n" +
-        `🔠 Ismi: ${res.fullName}` +
+        `- Ismi: ${res.fullName}` +
         "\n" +
-        `🔢 Yoshi: ${res.age}` +
+        `- Yoshi: ${res.age}` +
         "\n" +
-        `📍 Manzili: ${res.address}` +
+        `- Manzili: ${res.address}` +
         "\n" +
-        `📚 Malumoti: ${res.academicDegree}` +
+        `- Malumoti: ${res.academicDegree}` +
         "\n" +
-        `📞 Tel: ${res.phone}` +
+        `- Tel: ${res.phone}` +
         "\n" +
-        `🕑Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}` +
+        `-Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}` +
         "\n" +
-        `📄 Ariza holati: ${
+        `- Ariza holati: ${
           res.status === "cancellation"
             ? "Arizangiz bekorqilindi"
             : res.status === "interview"
@@ -598,15 +579,15 @@ const sendingVacancies = async (bot, chatId, code) => {
           const { title, test2, test3, test4, description, image } = res;
           await bot.sendPhoto(chatId, image, {
             caption:
-              `💰${title}` +
+              ` ${title}` +
               "\n\n" +
-              `✍️${test2}` +
+              `-${test2}` +
               "\n" +
-              `🌐${test3}` +
+              `-${test3}` +
               "\n" +
-              `🌐${test4}` +
+              `-${test4}` +
               "\n" +
-              `📚${description}`,
+              `-${description}`,
             reply_markup: JSON.stringify({
               inline_keyboard: [
                 [
@@ -644,15 +625,15 @@ const sendingVacanciesAll = async (bot, chatId) => {
 
       const options = {
         caption:
-          `💰${title}` +
+          `${title}` +
           "\n\n" +
-          `✍️${test2}` +
+          `-${test2}` +
           "\n" +
-          `🌐${test3}` +
+          `-${test3}` +
           "\n" +
-          `🌐${test4}` +
+          `-${test4}` +
           "\n" +
-          `📚${description}`,
+          `-${description}`,
         reply_markup: JSON.stringify({
           inline_keyboard: [
             [
@@ -870,25 +851,31 @@ const sendToAdmins = async (bot, chatId, admins) => {
         if (res.for == "taxi") {
           await bot.sendMessage(
             adminId,
-            `
-				👨🏻‍💻Yangi ariza mavjud.
-  
-				🔠 Ismi: ${res.fullName}
-				🔢 Yoshi: ${res.age}
-				📍 Manzili: ${res.address}
-				📚 Malumoti: ${res.academicDegree}
-				📞 Tel: ${res.phone}
-				🕑 Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}
-				📄 Ariza holati: ${
-          res.status === "cancellation"
-            ? "Arizangiz bekorqilindi"
-            : res.status === "interview"
-            ? "Siz suxbatga chaqirildingiz"
-            : res.status === "hiring"
-            ? "Siz ishga qabul qilindingiz"
-            : "Ko'rib chiqilishi kutilmoqda"
-        }
-				`,
+            `👨🏻‍💻Yangi ariza mavjud.` +
+              "\n\n" +
+              `- Ismi: ${res.fullName}` +
+              "\n" +
+              `- Yoshi: ${res.age}` +
+              "\n" +
+              `- Manzili: ${res.address}` +
+              "\n" +
+              `- Malumoti: ${res.academicDegree}` +
+              "\n" +
+              `- Tel: ${res.phone}` +
+              "\n" +
+              `- Yaratilgan vaqti: ${moment(res.createdAt).format(
+                "DD.MM.YY"
+              )}` +
+              "\n" +
+              `- Ariza holati: ${
+                res.status === "cancellation"
+                  ? "Arizangiz bekorqilindi"
+                  : res.status === "interview"
+                  ? "Siz suxbatga chaqirildingiz"
+                  : res.status === "hiring"
+                  ? "Siz ishga qabul qilindingiz"
+                  : "Ko'rib chiqilishi kutilmoqda"
+              }`,
             {
               reply_markup: JSON.stringify({
                 inline_keyboard: [
@@ -1127,7 +1114,6 @@ module.exports = {
   reason,
   fetchQuestion,
   updateQuestion,
-  handleCallback,
   vacanciesAll,
   updateVacancies,
   fetchForm,

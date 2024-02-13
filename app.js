@@ -30,29 +30,29 @@ const Form = require("./modelsSchema/form.schema.js");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-mongoose
-  .connect(process.env.MONGO_URI_WEB)
-  .then(() => {
-    console.log("DB connected!");
-  })
-  .catch((err) => {
-    console.log("DB connection error:", err);
-  });
 // mongoose
-//   .connect(process.env.MONGO_URI)
+//   .connect(process.env.MONGO_URI_WEB)
 //   .then(() => {
 //     console.log("DB connected!");
 //   })
-//   .catch(() => {
-//     console.log("DB connection error: ");
+//   .catch((err) => {
+//     console.log("DB connection error:", err);
 //   });
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("DB connected!");
+  })
+  .catch(() => {
+    console.log("DB connection error: ");
+  });
 
 // =============MY CONCTANTS=============
 // const adminChatId = 6625548114; // hr manager
-const adminChatId = 1259604390; // o'zim 2
 // const adminChatId = 545050591; // Hikmatillo
 // const adminChatId = 685051853; // Jaloldinaka
-// const adminChatId = 177482674;
+// const adminChatId = 177482674; // o'zim 1
+const adminChatId = 1259604390; // o'zim 2
 const admins = [177482674];
 let perPage = 4;
 const markupsText = [
@@ -147,18 +147,15 @@ bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const question = await functions.fetchQuestion(chatId);
     genericStep(question);
-    let forms = await functions.fetchForm();
-    let nextMsg = null;
-    let field = null;
     functions
       .fetchQuestion(chatId)
       .then(async (res) => {
-        if (msg.text && msg.text !== "/start" && res?.step == "name") {
+        if (msg.text && msg.text !== "/start" && res?.step == "fullName") {
           functions.updateQuestion(
             res._id,
             "step",
             "age",
-            "firstName",
+            "fullName",
             msg.text
           );
           await bot.sendMessage(
@@ -206,20 +203,7 @@ bot.on("message", async (msg) => {
           try {
             const telefonRegex =
               /\?+998|998(?:73|90|91|93|94|95|97|98|99)[1-9]\d{6}/;
-            if (telefonRegex.test(msg.text) && res.for == "taxi") {
-              functions.updateQuestion(
-                res._id,
-                "step",
-                "academicDegree",
-                "phone",
-                msg.text
-              );
-              await bot.sendMessage(
-                chatId,
-                "Iltimos malumotingizni tanlagn",
-                academicDegree
-              );
-            } else if (telefonRegex.test(msg.text) && res.for !== "taxi") {
+            if (telefonRegex.test(msg.text)) {
               functions.updateQuestion(
                 res._id,
                 "step",
@@ -267,7 +251,7 @@ bot.on("message", async (msg) => {
             );
             await bot.sendMessage(
               chatId,
-              "Iltimos o'zingizni suratingizni yuklang va forma tugaydi"
+              "Iltimos o'zingizni suratingizni yuklang va formani yakunlaymiz"
             );
           } catch (error) {
             console.log(error);
@@ -297,11 +281,15 @@ bot.on("message", async (msg) => {
           try {
             changeVacanciesStatusForAdmins(
               chatId,
-              "description",
+              "vacanciesCode",
               "test4",
               msg.text
             );
-            await bot.sendMessage(chatId, "Vakansiya uchun tavsif yozing");
+            await bot.sendMessage(
+              chatId,
+              "Iltimos vakansiyaga mos soxani tanlang",
+              vacanciesCode
+            );
           } catch (error) {
             console.log(error);
           }
@@ -316,8 +304,7 @@ bot.on("message", async (msg) => {
             console.log(VS[chatId]);
             await bot.sendMessage(
               chatId,
-              "Vakansiyaga mos keladigan 'code' ni tanlang bu vacansiyalarni boshqarish uchun kerak",
-              vacanciesCode
+              "Vakansiyaga mos keladigan surat yuklang (surat tipi 'JPG' ekanligiga ishonch hosil qiling)"
             );
           } catch (error) {
             console.log(error);
@@ -325,20 +312,20 @@ bot.on("message", async (msg) => {
         } else {
           try {
             const isTextValid = markupsText.includes(msg.text);
-            if (!isTextValid) {
-              const step = res?.step;
-              if (step === "photo") {
-                await bot.deleteMessage(chatId, msg.message_id);
-              } else if (VS[chatId]?.step == "photo") {
-                console.log(VS[chatId]);
-              } else {
-                await bot.deleteMessage(chatId, msg.message_id);
-                await bot.sendMessage(
-                  chatId,
-                  "Iltimos 'bot' ko'rsatmalariga asosan harakat qiling. Agar nosozlik vujudga kelsa /start tugmasini bosib 'bot'ga qaytadan start bering"
-                );
-              }
-            }
+            // if (!isTextValid) {
+            //   const step = res?.step;
+            //   if (step === "photo") {
+            //     await bot.deleteMessage(chatId, msg.message_id);
+            //   } else if (VS[chatId]?.step == "photo") {
+            //     console.log(VS[chatId]);
+            //   } else {
+            //     await bot.deleteMessage(chatId, msg.message_id);
+            //     await bot.sendMessage(
+            //       chatId,
+            //       "Iltimos 'bot' ko'rsatmalariga asosan harakat qiling. Agar nosozlik vujudga kelsa /start tugmasini bosib 'bot'ga qaytadan start bering"
+            //     );
+            //   }
+            // }
           } catch (error) {
             console.error("Error handling invalid message:", error);
           }
@@ -630,14 +617,16 @@ bot.on("callback_query", async (msg) => {
           }
         } else if (data.command == "document") {
           await bot.sendMessage(chatId, "Iltimos Resume yuklang");
-        } else if (data.command == "vacancies") {
-          //   await bot.deleteMessage(chatId, msg.message.message_id);
-          // await bot.sendMessage(
-          //   chatId,
-          //   "Iltimos o'zingizga mos soxani tanlang",
-          //   vacanciesIn
-          // );
-          await functions.sendingVacanciesAll(bot, chatId);
+        } else if (data.command == "vacanciesCode") {
+          await bot.deleteMessage(chatId, msg.message.message_id);
+          changeVacanciesStatusForAdmins(
+            chatId,
+            "description",
+            "vacanciesCode",
+            data.value
+          );
+          await bot.sendMessage(chatId, "Vakansiya uchun tavsif yozing");
+          //   await functions.sendingVacanciesAll(bot, chatId);
         } else if (data.command == "men" || data == "women") {
           functions.updateQuestion(
             res._id,
@@ -701,6 +690,7 @@ bot.on("callback_query", async (msg) => {
             "Malumotlar muvofaqiyatli saqlandi tez orada sizbilan bog'lanamiz",
             addQuestion
           );
+          functions.sendToAdmins(bot, chatId, admins);
         } else if (data.command == "prev") {
           await bot.deleteMessage(chatId, msg.message.message_id);
           await functions.fetchAll(
@@ -738,6 +728,19 @@ bot.on("callback_query", async (msg) => {
               _id: data.value,
             });
             if (deletedQuestionnaire) {
+              console.log(deletedQuestionnaire.photo);
+
+              // Fayl manzili MongoDBda saqlangan bo'lsa
+              const filePath = deletedQuestionnaire.photo;
+
+              // Faylni o'chirish
+              fs.unlink(filePath, (err) => {
+                if (err) {
+                  console.error("User surati o'chirilmadi:", err);
+                  return;
+                }
+                console.log("User surati o'chirildi");
+              });
               await bot.sendMessage(
                 chatId,
                 "Arizangiz muvofaqqiyatli o'chirildi"
@@ -778,7 +781,7 @@ bot.on("callback_query", async (msg) => {
             data.command
           );
         } else if (data.command == "hiring") {
-          //   await bot.deleteMessage(chatId, msg.message.message_id);
+          await bot.deleteMessage(chatId, msg.message.message_id);
           functions.updateCondidate(
             bot,
             Questionnaire,
@@ -876,7 +879,7 @@ bot.on("photo", async (msg) => {
         if (res?.step == "photo") {
           bot.getFile(photoId).then((fileInfo) => {
             const file_type = fileInfo.file_path.split(".").pop();
-            const fileUrl = `https://api.telegram.org/file/bot${TelegramBotToken}/${fileInfo.file_path}`;
+            const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
             const directoryPath = path.join(__dirname, "photos");
             if (!fs.existsSync(directoryPath)) {
               fs.mkdirSync(directoryPath, { recursive: true });
@@ -899,23 +902,30 @@ bot.on("photo", async (msg) => {
               fileStream.on("finish", async () => {
                 try {
                   await bot.sendPhoto(chatId, filePath, {
-                    caption: `👤Sizning ma'lumotlaringiz.
-						  
-			-Ismi: ${res.fullName}
-			-Yoshi: ${res.age}
-			-Manzili: ${res.address}
-			-Tel: ${res.phone}
-			-Qayerda o'qigani: ${res.whereDidYouStudy}
-			-Qayerda ishlagani: ${res.whereDidYouWork}
-			-Ariza holati: ${
-        res.status === "cancellation"
-          ? "Arizangiz bekorqilindi"
-          : res.status === "interview"
-          ? "Siz suxbatga chaqirildingiz"
-          : res.status === "hiring"
-          ? "Siz ishga qabul qilindingiz"
-          : "Ko'rib chiqilishi kutilmoqda"
-      }`,
+                    caption:
+                      `👤Sizning ma'lumotlaringiz.` +
+                      "\n\n" +
+                      `-Ismi: ${res.fullName}` +
+                      "\n" +
+                      `-Yoshi: ${res.age}` +
+                      "\n" +
+                      `-Manzili: ${res.address}` +
+                      "\n" +
+                      `-Tel: ${res.phone}` +
+                      "\n" +
+                      `-Qayerda o'qigani: ${res.whereDidYouStudy}` +
+                      "\n" +
+                      `-Qayerda ishlagani: ${res.whereDidYouWork}` +
+                      "\n" +
+                      `-Ariza holati: ${
+                        res.status === "cancellation"
+                          ? "Arizangiz bekorqilindi"
+                          : res.status === "interview"
+                          ? "Siz suxbatga chaqirildingiz"
+                          : res.status === "hiring"
+                          ? "Siz ishga qabul qilindingiz"
+                          : "Ko'rib chiqilishi kutilmoqda"
+                      }`,
                     reply_markup: JSON.stringify({
                       inline_keyboard: [
                         [
@@ -945,7 +955,7 @@ bot.on("photo", async (msg) => {
                 }
               });
 
-              // Handle errors during the file download
+              // Handle errors during the file download"photo"
               response.on("error", (error) => {
                 console.error("Error downloading file:", error);
                 fileStream.close();
@@ -955,7 +965,7 @@ bot.on("photo", async (msg) => {
         } else if (VS[chatId] && VS[chatId].step == "photo") {
           bot.getFile(photoId).then((fileInfo) => {
             const file_type = fileInfo.file_path.split(".").pop();
-            const fileUrl = `https://api.telegram.org/file/bot${TelegramBotToken}/${fileInfo.file_path}`;
+            const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
             const directoryPath = path.join(__dirname, "photos");
             if (!fs.existsSync(directoryPath)) {
               fs.mkdirSync(directoryPath, { recursive: true });
@@ -1039,7 +1049,7 @@ bot.on("document", (msg) => {
     bot
       .getFile(fileId)
       .then((fileInfo) => {
-        const fileUrl = `https://api.telegram.org/file/bot${TelegramBotToken}/${fileInfo.file_path}`;
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
         const directoryPath = "./documents";
         const filePath = path.join(directoryPath, `${file_name}.${file_type}`);
         if (!fs.existsSync(directoryPath)) {
