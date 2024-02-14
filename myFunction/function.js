@@ -7,18 +7,19 @@ const Vacancies = require("../modelsSchema/vacancies.schema.js");
 const {
   empty,
   nextPage,
+  nextAndPrevPage,
   reform,
   registerStart,
-  gender,
-  academicDegree,
   addQuestion,
   nextPageEnd,
   adminMarkup,
 } = require("../myMarkups/markups");
+
 const admins = [177482674]; // o'zim 2
+
 let condidatCount = 0;
 let currentPage = 0;
-let perPage = 4;
+let perPage = 1;
 
 const createCondidate = async (chatId, fullName) => {
   await Condidates.findOne({ chatId: chatId })
@@ -82,25 +83,32 @@ const createVacancies = async (bot, chatId, data) => {
       .save()
       .then(async (res) => {
         const resId = res._id.toString();
-        const { title, test2, test3, test4, description, active, image } = res;
+        const {
+          title,
+          office,
+          workingtime,
+          salary,
+          description,
+          active,
+          image,
+        } = res;
         const CommandVacancies = "CV";
         const options = {
           caption:
-            "\n\n" +
             `${title}` +
             "\n\n" +
-            `-${test2}` +
+            `🏢 Ofis nomi: ${office}` +
             "\n\n" +
-            `-${test3}` +
+            `⏱ Ish vaqti: ${workingtime}` +
             "\n\n" +
-            `-${test4}` +
+            `💰 Maosh: ${salary}` +
             "\n\n" +
-            `-${description}`,
+            `✒️ Izoh: ${description}`,
           reply_markup: JSON.stringify({
             inline_keyboard: [
               [
                 {
-                  text: active ? "Vaqtincha to'xtatish" : "Faollashtirish",
+                  text: active ? "⏸ Vaqtincha to'xtatish" : "▶️ Faollashtirish",
                   callback_data: JSON.stringify({
                     com: CommandVacancies,
                     ac: !active,
@@ -110,7 +118,7 @@ const createVacancies = async (bot, chatId, data) => {
               ],
               [
                 {
-                  text: "O'chirish",
+                  text: "🗑 O'chirish",
                   callback_data: JSON.stringify({
                     command: "deleteVacancies",
                     id: resId,
@@ -141,16 +149,33 @@ const updateVacancies = async (bot, chatId, id, item, value) => {
       .exec()
       .then(async (res) => {
         const resId = res._id.toString();
-        const { title, description, active, image } = res;
+        const {
+          title,
+          office,
+          workingtime,
+          salary,
+          description,
+          active,
+          image,
+        } = res;
         const CommandVacancies = "CV";
 
         const options = {
-          caption: `\n${title}\n\n${description}\n\n`,
+          caption:
+            `${title}` +
+            "\n\n" +
+            `🏢 Ofis nomi: ${office}` +
+            "\n\n" +
+            `⏱ Ish vaqti: ${workingtime}` +
+            "\n\n" +
+            `💰 Maosh: ${salary}` +
+            "\n\n" +
+            `✒️ Izoh: ${description}`,
           reply_markup: JSON.stringify({
             inline_keyboard: [
               [
                 {
-                  text: active ? "Vaqtincha to'xtatish" : "Faollashtirish",
+                  text: active ? "⏸ Vaqtincha to'xtatish" : "▶️ Faollashtirish",
                   callback_data: JSON.stringify({
                     com: CommandVacancies,
                     ac: !active,
@@ -160,7 +185,7 @@ const updateVacancies = async (bot, chatId, id, item, value) => {
               ],
               [
                 {
-                  text: "O'chirish",
+                  text: "🗑 O'chirish",
                   callback_data: JSON.stringify({
                     command: "deleteVacancies",
                     id: resId,
@@ -341,7 +366,7 @@ const myQuestion = async (bot, chatId) => {
                 inline_keyboard: [
                   [
                     {
-                      text: "O'chirish",
+                      text: "🗑 O'chirish",
                       callback_data: JSON.stringify({
                         command: "delete",
                         value: el._id,
@@ -386,7 +411,7 @@ const myQuestion = async (bot, chatId) => {
                   inline_keyboard: [
                     [
                       {
-                        text: "O'chirish",
+                        text: "🗑 O'chirish",
                         callback_data: JSON.stringify({
                           command: "delete",
                           value: el._id,
@@ -477,64 +502,135 @@ const issetPhone = async (bot, phoneNumber, chatId, dataQuestion) => {
 };
 const sendingData = async (bot, collection, id, adminId) => {
   await collection.findOne({ _id: id }).then(async (res) => {
-    await bot.sendMessage(
-      adminId,
-      `👨🏻‍💻Nomzod haqida malumotlar` +
-        "\n\n" +
-        `- Ismi: ${res.fullName}` +
-        "\n" +
-        `- Yoshi: ${res.age}` +
-        "\n" +
-        `- Manzili: ${res.address}` +
-        "\n" +
-        `- Malumoti: ${res.academicDegree}` +
-        "\n" +
-        `- Tel: ${res.phone}` +
-        "\n" +
-        `-Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}` +
-        "\n" +
-        `- Ariza holati: ${
-          res.status === "cancellation"
-            ? "Arizangiz bekorqilindi"
-            : res.status === "interview"
-            ? "Siz suxbatga chaqirildingiz"
-            : res.status === "hiring"
-            ? "Siz ishga qabul qilindingiz"
-            : "Ko'rib chiqilishi kutilmoqda"
-        }
-		  `,
-      {
-        reply_markup: JSON.stringify({
-          inline_keyboard: [
-            [
-              {
-                text: "Bekor qilindi",
-                callback_data: JSON.stringify({
-                  command: "cancellation",
-                  value: res._id,
-                }),
-              },
-              {
-                text: "Suxbatga chaqirildi",
-                callback_data: JSON.stringify({
-                  command: "interview",
-                  value: res._id,
-                }),
-              },
+    const filePath = res.photo;
+    try {
+      if (filePath) {
+        await bot.sendPhoto(adminId, filePath, {
+          caption:
+            `👨🏻‍💻Yangi ariza mavjud.` +
+            "\n\n" +
+            `-Ismi: ${res.fullName}` +
+            "\n" +
+            `-Yoshi: ${res.age}` +
+            "\n" +
+            `-Manzili: ${res.address}` +
+            "\n" +
+            `-Malumot darajasi: ${res.academicDegree}` +
+            "\n" +
+            `-Tel: ${res.phone}` +
+            "\n" +
+            `-Qayerda o'qigani: ${res.whereDidYouStudy}` +
+            "\n" +
+            `-Qayerda ishlagani: ${res.whereDidYouWork}` +
+            "\n" +
+            `-Kompaniya: ${
+              res.for == "pharmacy"
+                ? "Oilaviy dorihonaga"
+                : "Enter o'quv markaziga"
+            }` +
+            "\n" +
+            `-Ariza holati: ${
+              res.status === "cancellation"
+                ? "Arizangiz bekorqilindi"
+                : res.status === "interview"
+                ? "Siz suxbatga chaqirildingiz"
+                : res.status === "hiring"
+                ? "Siz ishga qabul qilindingiz"
+                : "Ko'rib chiqilishi kutilmoqda"
+            }`,
+          reply_markup: JSON.stringify({
+            inline_keyboard: [
+              [
+                {
+                  text: "Bekor qilindi",
+                  callback_data: JSON.stringify({
+                    command: "cancellation",
+                    value: res._id,
+                  }),
+                },
+                {
+                  text: "Suxbatga chaqirildi",
+                  callback_data: JSON.stringify({
+                    command: "interview",
+                    value: res._id,
+                  }),
+                },
+              ],
+              [
+                {
+                  text: "Ishga qaul qilindi",
+                  callback_data: JSON.stringify({
+                    command: "hiring",
+                    value: res._id,
+                  }),
+                },
+              ],
             ],
-            [
-              {
-                text: "Ishga qaul qilindi",
-                callback_data: JSON.stringify({
-                  command: "hiring",
-                  value: res._id,
-                }),
-              },
-            ],
-          ],
-        }),
+          }),
+        });
+      } else {
+        await bot.sendMessage(
+          adminId,
+          `👨🏻‍💻Nomzod haqida malumotlar` +
+            "\n\n" +
+            `- Ismi: ${res.fullName}` +
+            "\n" +
+            `- Yoshi: ${res.age}` +
+            "\n" +
+            `- Manzili: ${res.address}` +
+            "\n" +
+            `- Malumoti: ${res.academicDegree}` +
+            "\n" +
+            `- Tel: ${res.phone}` +
+            "\n" +
+            `-Yaratilgan vaqti: ${moment(res.createdAt).format("DD.MM.YY")}` +
+            "\n" +
+            `- Ariza holati: ${
+              res.status === "cancellation"
+                ? "Arizangiz bekorqilindi"
+                : res.status === "interview"
+                ? "Siz suxbatga chaqirildingiz"
+                : res.status === "hiring"
+                ? "Siz ishga qabul qilindingiz"
+                : "Ko'rib chiqilishi kutilmoqda"
+            }
+					`,
+          {
+            reply_markup: JSON.stringify({
+              inline_keyboard: [
+                [
+                  {
+                    text: "Bekor qilindi",
+                    callback_data: JSON.stringify({
+                      command: "cancellation",
+                      value: res._id,
+                    }),
+                  },
+                  {
+                    text: "Suxbatga chaqirildi",
+                    callback_data: JSON.stringify({
+                      command: "interview",
+                      value: res._id,
+                    }),
+                  },
+                ],
+                [
+                  {
+                    text: "Ishga qaul qilindi",
+                    callback_data: JSON.stringify({
+                      command: "hiring",
+                      value: res._id,
+                    }),
+                  },
+                ],
+              ],
+            }),
+          }
+        );
       }
-    );
+    } catch (error) {
+      console.log(error);
+    }
   });
 };
 
@@ -576,18 +672,19 @@ const sendingVacancies = async (bot, chatId, code) => {
     try {
       if (result.length > 0) {
         result.forEach(async (res) => {
-          const { title, test2, test3, test4, description, image } = res;
+          const { title, office, workingtime, salary, description, image } =
+            res;
           await bot.sendPhoto(chatId, image, {
             caption:
-              ` ${title}` +
+              `${title}` +
               "\n\n" +
-              `-${test2}` +
-              "\n" +
-              `-${test3}` +
-              "\n" +
-              `-${test4}` +
-              "\n" +
-              `-${description}`,
+              `🏢 Ofis nomi: ${office}` +
+              "\n\n" +
+              `⏱ Ish vaqti: ${workingtime}` +
+              "\n\n" +
+              `💰 Maosh: ${salary}` +
+              "\n\n" +
+              `✒️ Izoh: ${description}`,
             reply_markup: JSON.stringify({
               inline_keyboard: [
                 [
@@ -618,51 +715,66 @@ const sendingVacancies = async (bot, chatId, code) => {
 const sendingVacanciesAll = async (bot, chatId) => {
   try {
     const results = await Vacancies.find();
-    const sendPhotoPromises = results.map(async (res) => {
-      const resId = res._id.toString();
-      const { title, test2, test3, test4, description, active, image } = res;
-      const CommandVacancies = "CV";
+    if (results.length) {
+      const sendPhotoPromises = results.map(async (res) => {
+        if (res.image) {
+          const resId = res._id.toString();
+          const {
+            title,
+            office,
+            workingtime,
+            salary,
+            description,
+            image,
+            active,
+          } = res;
+          const CommandVacancies = "CV";
+          //   🏢✒️✏️⌚️⏱💵💰📩
+          const options = {
+            caption:
+              `${title}` +
+              "\n\n" +
+              `🏢 Ofis nomi: ${office}` +
+              "\n\n" +
+              `⏱ Ish vaqti: ${workingtime}` +
+              "\n\n" +
+              `💰 Maosh: ${salary}` +
+              "\n\n" +
+              `✒️ Izoh: ${description}`,
+            reply_markup: JSON.stringify({
+              inline_keyboard: [
+                [
+                  {
+                    text: active
+                      ? "⏸ Vaqtincha to'xtatish"
+                      : "▶️ Faollashtirish",
+                    callback_data: JSON.stringify({
+                      com: CommandVacancies,
+                      ac: !active,
+                      id: resId,
+                    }),
+                  },
+                ],
+                [
+                  {
+                    text: "🗑 O'chirish",
+                    callback_data: JSON.stringify({
+                      command: "deleteVacancies",
+                      id: resId,
+                    }),
+                  },
+                ],
+              ],
+            }),
+          };
+          await bot.sendPhoto(chatId, image, options);
+        }
+      });
 
-      const options = {
-        caption:
-          `${title}` +
-          "\n\n" +
-          `-${test2}` +
-          "\n" +
-          `-${test3}` +
-          "\n" +
-          `-${test4}` +
-          "\n" +
-          `-${description}`,
-        reply_markup: JSON.stringify({
-          inline_keyboard: [
-            [
-              {
-                text: active ? "Vaqtincha to'xtatish" : "Faollashtirish",
-                callback_data: JSON.stringify({
-                  com: CommandVacancies,
-                  ac: !active,
-                  id: resId,
-                }),
-              },
-            ],
-            [
-              {
-                text: "O'chirish",
-                callback_data: JSON.stringify({
-                  command: "deleteVacancies",
-                  id: resId,
-                }),
-              },
-            ],
-          ],
-        }),
-      };
-
-      await bot.sendPhoto(chatId, image, options);
-    });
-
-    await Promise.all(sendPhotoPromises);
+      await Promise.all(sendPhotoPromises);
+    } else {
+      await bot.sendMessage(chatId, "Hozircha Vakansiyalar mavjud emas.");
+    }
   } catch (error) {
     console.log("Error sending images:", error);
   }
@@ -711,7 +823,7 @@ const vacanciesAll = async (bot, elementsPerPage, prevORnext, chatId) => {
             inline_keyboard: [
               elements,
               skipElements + elementsPerPage < totalCount
-                ? nextPage
+                ? nextAndPrevPage
                 : skipElements + elementsPerPage === totalCount
                 ? nextPageEnd
                 : empty,
@@ -790,7 +902,7 @@ const fetchAll = async (
       await bot.sendMessage(
         chatId,
         `${
-          skipElements + perPage >= totalCount
+          perPage + skipElements >= totalCount
             ? totalCount
             : skipElements + response.length
         }/${totalCount}` +
@@ -801,10 +913,12 @@ const fetchAll = async (
           reply_markup: JSON.stringify({
             inline_keyboard: [
               elements,
-              skipElements + perPage < totalCount
-                ? nextPage
-                : skipElements + perPage === totalCount
+              perPage + skipElements < totalCount && perPage + skipElements > 1
+                ? nextAndPrevPage
+                : perPage + skipElements === totalCount
                 ? nextPageEnd
+                : perPage + skipElements === 1
+                ? nextPage
                 : empty,
             ],
           }),
@@ -847,27 +961,32 @@ const sendToAdmins = async (bot, chatId, admins) => {
       .exec();
 
     if (res) {
+      const filePath = res.photo;
       for (const adminId of admins) {
-        if (res.for == "taxi") {
+        if (!filePath) {
           await bot.sendMessage(
             adminId,
             `👨🏻‍💻Yangi ariza mavjud.` +
               "\n\n" +
-              `- Ismi: ${res.fullName}` +
+              `-Ismi: ${res.fullName}` +
               "\n" +
-              `- Yoshi: ${res.age}` +
+              `-Yoshi: ${res.age}` +
               "\n" +
-              `- Manzili: ${res.address}` +
+              `-Manzili: ${res.address}` +
               "\n" +
-              `- Malumoti: ${res.academicDegree}` +
+              `-Tel: ${res.phone}` +
               "\n" +
-              `- Tel: ${res.phone}` +
+              `-Qayerda o'qigani: ${res.whereDidYouStudy}` +
               "\n" +
-              `- Yaratilgan vaqti: ${moment(res.createdAt).format(
-                "DD.MM.YY"
-              )}` +
+              `-Qayerda ishlagani: ${res.whereDidYouWork}` +
               "\n" +
-              `- Ariza holati: ${
+              `-Kompaniya: ${
+                res.for == "pharmacy"
+                  ? "Oilaviy dorihonaga"
+                  : "Enter o'quv markaziga"
+              }` +
+              "\n" +
+              `-Ariza holati: ${
                 res.status === "cancellation"
                   ? "Arizangiz bekorqilindi"
                   : res.status === "interview"
@@ -909,29 +1028,37 @@ const sendToAdmins = async (bot, chatId, admins) => {
             }
           );
         } else {
-          const filePath = res.photo;
           await bot.sendPhoto(adminId, filePath, {
-            caption: `👨🏻‍💻Yangi ariza mavjud.
-  
-			  -Ismi: ${res.fullName}
-			  -Yoshi: ${res.age}
-			  -Manzili: ${res.address}
-			  -Malumot darajasi: ${res.academicDegree}
-			  -Tel: ${res.phone}
-			  -Qayerda o'qigani: ${res.whereDidYouStudy}
-			  -Qayerda ishlagani: ${res.whereDidYouWork}
-			  -Kompaniya: ${
-          res.for == "pharmacy" ? "Oilaviy dorihonaga" : "Enter o'quv markaziga"
-        }
-			  -Ariza holati: ${
-          res.status === "cancellation"
-            ? "Arizangiz bekorqilindi"
-            : res.status === "interview"
-            ? "Siz suxbatga chaqirildingiz"
-            : res.status === "hiring"
-            ? "Siz ishga qabul qilindingiz"
-            : "Ko'rib chiqilishi kutilmoqda"
-        }`,
+            caption:
+              `👨🏻‍💻Yangi ariza mavjud.` +
+              "\n\n" +
+              `-Ismi: ${res.fullName}` +
+              "\n" +
+              `-Yoshi: ${res.age}` +
+              "\n" +
+              `-Manzili: ${res.address}` +
+              "\n" +
+              `-Tel: ${res.phone}` +
+              "\n" +
+              `-Qayerda o'qigani: ${res.whereDidYouStudy}` +
+              "\n" +
+              `-Qayerda ishlagani: ${res.whereDidYouWork}` +
+              "\n" +
+              `-Kompaniya: ${
+                res.for == "pharmacy"
+                  ? "Oilaviy dorihonaga"
+                  : "Enter o'quv markaziga"
+              }` +
+              "\n" +
+              `-Ariza holati: ${
+                res.status === "cancellation"
+                  ? "Arizangiz bekorqilindi"
+                  : res.status === "interview"
+                  ? "Siz suxbatga chaqirildingiz"
+                  : res.status === "hiring"
+                  ? "Siz ishga qabul qilindingiz"
+                  : "Ko'rib chiqilishi kutilmoqda"
+              }`,
             reply_markup: JSON.stringify({
               inline_keyboard: [
                 [

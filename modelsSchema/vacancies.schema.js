@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 const VacanciesSchema = mongoose.Schema(
   {
     title: { type: String },
-    test2: { type: String },
-    test3: { type: String },
-    test4: { type: String },
+    office: { type: String },
+    workingtime: { type: String },
+    salary: { type: String },
     description: { type: String },
+    code: { type: String },
     image: { type: String },
     active: { type: Boolean },
-    code: { type: String },
   },
   { timestamps: true }
 );

@@ -81,7 +81,7 @@ const nextVacanciesEnd = [
   },
 ];
 
-const nextPage = [
+const nextAndPrevPage = [
   {
     text: "⏮",
     callback_data: JSON.stringify({
@@ -89,6 +89,16 @@ const nextPage = [
       value: "Avvalgi",
     }),
   },
+  {
+    text: "⏭",
+    callback_data: JSON.stringify({
+      command: "next",
+      value: "Keyingi",
+    }),
+  },
+];
+
+const nextPage = [
   {
     text: "⏭",
     callback_data: JSON.stringify({
@@ -276,6 +286,7 @@ const academicDegree = {
 
 module.exports = {
   questionarieStatus,
+  nextAndPrevPage,
   nextPage,
   reform,
   registerStart,

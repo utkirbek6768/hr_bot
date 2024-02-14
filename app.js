@@ -48,13 +48,13 @@ mongoose
   });
 
 // =============MY CONCTANTS=============
-// const adminChatId = 6625548114; // hr manager
+const adminChatId = 6625548114; // hr manager
 // const adminChatId = 545050591; // Hikmatillo
 // const adminChatId = 685051853; // Jaloldinaka
 // const adminChatId = 177482674; // o'zim 1
-const adminChatId = 1259604390; // o'zim 2
+// const adminChatId = 1259604390; // o'zim 2
 const admins = [177482674];
-let perPage = 4;
+let perPage = 1;
 const markupsText = [
   "/start",
   "Yangi_arizalar",
@@ -91,13 +91,13 @@ const changeQuestionStatus = (chatId, step) => {
 const VS = {};
 const changeVacanciesStatusForAdmins = (chatId, step, item, value) => {
   const defaultFormData = {
-    title: "Invalid",
-    test2: "Invalid",
-    test3: "Invalid",
-    test4: "Invalid",
-    description: "Invalid",
-    image: "Invalid",
-    code: "Invalid",
+    title: "",
+    office: "",
+    workingtime: "",
+    salary: "",
+    description: "",
+    code: "",
+    image: "",
     active: false,
   };
 
@@ -203,13 +203,14 @@ bot.on("message", async (msg) => {
           try {
             const telefonRegex =
               /\?+998|998(?:73|90|91|93|94|95|97|98|99)[1-9]\d{6}/;
+            const phone = msg.text.replace(/[+\s]/g, "");
             if (telefonRegex.test(msg.text)) {
               functions.updateQuestion(
                 res._id,
                 "step",
                 "whereDidYouStudy",
                 "phone",
-                msg.text
+                `+${phone}`
               );
               await bot.sendMessage(
                 chatId,
@@ -258,31 +259,44 @@ bot.on("message", async (msg) => {
           }
         } else if (msg.text && VS[chatId]?.step === "title") {
           try {
-            changeVacanciesStatusForAdmins(chatId, "step2", "title", msg.text);
-            await bot.sendMessage(chatId, "Vakansiya test2 ni yozing");
+            changeVacanciesStatusForAdmins(chatId, "office", "title", msg.text);
+            await bot.sendMessage(chatId, "Offis momini kiriting");
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "step2") {
+        } else if (msg.text && VS[chatId]?.step === "office") {
           try {
-            changeVacanciesStatusForAdmins(chatId, "step3", "test2", msg.text);
-            await bot.sendMessage(chatId, "Vakansiya test3 ni yozing");
+            changeVacanciesStatusForAdmins(
+              chatId,
+              "workingtime",
+              "office",
+              msg.text
+            );
+            await bot.sendMessage(
+              chatId,
+              "Ish vaqtini kiriting, masalan: 08 00 dan 16 00 gacha yoki sizning variantingiz"
+            );
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "step3") {
+        } else if (msg.text && VS[chatId]?.step === "workingtime") {
           try {
-            changeVacanciesStatusForAdmins(chatId, "step4", "test3", msg.text);
-            await bot.sendMessage(chatId, "Vakansiya test4 ni yozing");
+            changeVacanciesStatusForAdmins(
+              chatId,
+              "salary",
+              "workingtime",
+              msg.text
+            );
+            await bot.sendMessage(chatId, "Ushbu ish uchun maoshni kiriting");
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "step4") {
+        } else if (msg.text && VS[chatId]?.step === "salary") {
           try {
             changeVacanciesStatusForAdmins(
               chatId,
               "vacanciesCode",
-              "test4",
+              "salary",
               msg.text
             );
             await bot.sendMessage(
@@ -416,9 +430,7 @@ bot.onText(/Vakansiyalar/, async (msg) => {
 bot.onText(/Amaldagi_vakansiyalar/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    await bot.sendMessage(chatId, "amaldagi vakansiyalar", vacanciesHome);
     await bot.deleteMessage(chatId, msg.message_id);
-    await bot.deleteMessage(chatId, msg.message_id - 1);
     // functions.vacanciesAll(bot, 1, "all", chatId);
     functions.sendingVacanciesAll(bot, chatId);
   } catch (error) {
@@ -430,7 +442,11 @@ bot.onText(/Vakansiya_yaratish/, async (msg) => {
   try {
     const chatId = msg.chat.id;
     // await bot.deleteMessage(chatId, msg.message_id);
-    await bot.sendMessage(chatId, "Vacansiya nomini kiriting", remove);
+    await bot.sendMessage(
+      chatId,
+      "Vacansiya nomini (sarlavhani) kiriting",
+      remove
+    );
     changeVacanciesStatusForAdmins(chatId, "title");
   } catch (error) {
     console.error("An error occurred:", error);
@@ -466,8 +482,6 @@ bot.onText(/RoyalTaxi/, async (msg) => {
   try {
     const chatId = msg.chat.id;
     const delId = msg.message_id;
-    await bot.deleteMessage(chatId, delId - 1, remove);
-    await bot.deleteMessage(chatId, delId);
     await functions.sendingVacancies(bot, chatId, "taxi");
   } catch (error) {
     console.error("An error occurred:", error);
@@ -499,8 +513,6 @@ bot.onText(/Enter/, async (msg) => {
     await functions
       .fetchQuestion(chatId)
       .then(async (res) => {
-        await bot.deleteMessage(chatId, delId - 1, remove);
-        await bot.deleteMessage(chatId, delId, remove);
         await functions.sendingVacancies(bot, chatId, "teacher");
         functions.updateQuestion(res._id, "step", "start", "for", "teacher");
       })
@@ -622,7 +634,7 @@ bot.on("callback_query", async (msg) => {
           changeVacanciesStatusForAdmins(
             chatId,
             "description",
-            "vacanciesCode",
+            "code",
             data.value
           );
           await bot.sendMessage(chatId, "Vakansiya uchun tavsif yozing");
@@ -871,7 +883,6 @@ bot.on("photo", async (msg) => {
   try {
     const chatId = msg.chat.id;
     const photoId = msg.photo[msg.photo.length - 1].file_id;
-
     await Questionnaire.findOne({ chatId: chatId, status: "unfinished" })
       .sort({ createdAt: -1 })
       .limit(1)
@@ -884,9 +895,12 @@ bot.on("photo", async (msg) => {
             if (!fs.existsSync(directoryPath)) {
               fs.mkdirSync(directoryPath, { recursive: true });
             }
+            const filename = fileInfo.file_unique_id
+              .replace(/[0-9]/g, "")
+              .replace(/[^A-Za-z]/g, "");
             const filePath = path.join(
               directoryPath,
-              `${fileInfo.file_unique_id}.${file_type}`
+              `${filename}.${file_type}`
             );
             functions.updateQuestion(
               res._id,
@@ -970,9 +984,13 @@ bot.on("photo", async (msg) => {
             if (!fs.existsSync(directoryPath)) {
               fs.mkdirSync(directoryPath, { recursive: true });
             }
+
+            const filename = fileInfo.file_unique_id
+              .replace(/[0-9]/g, "")
+              .replace(/[^A-Za-z]/g, "");
             const filePath = path.join(
               directoryPath,
-              `${fileInfo.file_unique_id}.${file_type}`
+              `${filename}.${file_type}`
             );
 
             changeVacanciesStatusForAdmins(chatId, "photo", "image", filePath);
@@ -985,15 +1003,15 @@ bot.on("photo", async (msg) => {
                   await bot.sendPhoto(chatId, filePath, {
                     caption:
                       " \n\n" +
-                      `💰${VS[chatId].formData.title}` +
+                      `${VS[chatId].formData.title}` +
                       "\n\n" +
-                      `✍️${VS[chatId].formData.test2}` +
+                      `- Idora nomi: ${VS[chatId].formData.office}` +
                       "\n\n" +
-                      `🌐${VS[chatId].formData.test3}` +
+                      `-Ish vaqti: ${VS[chatId].formData.workingtime}` +
                       "\n\n" +
-                      `🌐${VS[chatId].formData.test4}` +
+                      `- Maosh: ${VS[chatId].formData.salary}` +
                       "\n\n" +
-                      `📚${VS[chatId].formData.description}`,
+                      `- Izoh: ${VS[chatId].formData.description}`,
                     reply_markup: JSON.stringify({
                       inline_keyboard: [
                         [
