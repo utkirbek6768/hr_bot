@@ -13,7 +13,7 @@ const {
   addQuestion,
   nextPageEnd,
   adminMarkup,
-} = require("../myMarkups/markups");
+} = require("../markups/markups.js");
 
 const admins = [177482674]; // o'zim 2
 
@@ -65,7 +65,88 @@ const createForm = async () => {
     console.error("Error creating form:", error);
   }
 };
+// =================================================================
+const createVacanciesTest = async (chatId) => {
+  try {
+    await Vacancies.deleteMany({ chatId: chatId, status: "unfinished" });
+    const createVacancies = new Vacancies({
+      title: "",
+      office: "",
+      workingtime: "",
+      salary: "",
+      description: "",
+      code: "",
+      image: "",
+      active: true,
+      status: "unfinished",
+      chatId: chatId,
+    });
+    await createVacancies.save();
+    return createVacancies;
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
+};
 
+const addToVacancies = async (bot, chatId, item, value) => {
+  try {
+    const vacancie = await Vacancies.updateMany(
+      { chatId: chatId, status: "unfinished" },
+      { $set: { [item]: value } }
+    );
+
+    if (item === "image") {
+      Vacancies.findOne({ chatId: chatId, status: "unfinished" })
+        .then(async (res) => {
+          try {
+            console.log(res.image);
+            await bot.sendPhoto(chatId, res.image, {
+              caption:
+                " \n\n" +
+                `${res.title}` +
+                "\n\n" +
+                `- Idora nomi: ${res.office}` +
+                "\n\n" +
+                `-Ish vaqti: ${res.workingtime}` +
+                "\n\n" +
+                `- Maosh: ${res.salary}` +
+                "\n\n" +
+                `- Izoh: ${res.description}`,
+              reply_markup: JSON.stringify({
+                inline_keyboard: [
+                  [
+                    {
+                      text: "Saqlash",
+                      callback_data: JSON.stringify({
+                        command: "newVacancies",
+                        value: "save",
+                      }),
+                    },
+                    {
+                      text: "Bekor qilish",
+                      callback_data: JSON.stringify({
+                        command: "newVacancies",
+                        value: "cancellation",
+                      }),
+                    },
+                  ],
+                ],
+              }),
+            });
+          } catch (err) {
+            console.log(err);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+    return vacancie;
+  } catch (err) {
+    console.log(err);
+  }
+};
+//   ==============================================
 const createVacancies = async (bot, chatId, data) => {
   try {
     const createVacancies = new Vacancies({ ...data });
@@ -714,7 +795,7 @@ const sendingVacancies = async (bot, chatId, code) => {
 
 const sendingVacanciesAll = async (bot, chatId) => {
   try {
-    const results = await Vacancies.find();
+    const results = await Vacancies.find({ status: "finished" }).exec();
     if (results.length) {
       const sendPhotoPromises = results.map(async (res) => {
         if (res.image) {
@@ -729,7 +810,6 @@ const sendingVacanciesAll = async (bot, chatId) => {
             active,
           } = res;
           const CommandVacancies = "CV";
-          //   🏢✒️✏️⌚️⏱💵💰📩
           const options = {
             caption:
               `${title}` +
@@ -1227,6 +1307,7 @@ module.exports = {
   myQuestion,
   issetAge,
   addToQuestion,
+  addToVacancies,
   issetPhone,
   sendingData,
   fetchAll,
@@ -1235,6 +1316,7 @@ module.exports = {
   sendToAdmins,
   createForm,
   createVacancies,
+  createVacanciesTest,
   sendingVacancies,
   sendingVacanciesAll,
   deleteMsgAll,

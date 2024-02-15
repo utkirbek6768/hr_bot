@@ -10,7 +10,7 @@ const botToken = process.env.BOT_TOKEN;
 const bot = new TelegramBot(botToken, { polling: true });
 const mongoose = require("mongoose");
 const express = require("express");
-const functions = require("./myFunction/function.js");
+const functions = require("./functions/function.js");
 const {
   registerStart,
   remove,
@@ -22,39 +22,34 @@ const {
   vacancies,
   vacanciesHome,
   vacanciesCode,
-} = require("./myMarkups/markups");
-
+} = require("./markups/markups.js");
+const { handleDocument } = require("./modules/handleDocument.js");
+const { handlePhoto } = require("./modules/handlePhoto.js");
 const Questionnaire = require("./modelsSchema/questionnaire.schema.js");
 const Vacancies = require("./modelsSchema/vacancies.schema.js");
 const Form = require("./modelsSchema/form.schema.js");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-// mongoose
-//   .connect(process.env.MONGO_URI_WEB)
-//   .then(() => {
-//     console.log("DB connected!");
-//   })
-//   .catch((err) => {
-//     console.log("DB connection error:", err);
-//   });
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("DB connected!");
   })
-  .catch(() => {
-    console.log("DB connection error: ");
+  .catch((err) => {
+    console.log("DB connection error:", err);
   });
 
 // =============MY CONCTANTS=============
-const adminChatId = 6625548114; // hr manager
+// const adminChatId = 6625548114; // hr manager
 // const adminChatId = 545050591; // Hikmatillo
 // const adminChatId = 685051853; // Jaloldinaka
-// const adminChatId = 177482674; // o'zim 1
+const adminChatId = 177482674; // o'zim 1
 // const adminChatId = 1259604390; // o'zim 2
 const admins = [177482674];
 let perPage = 1;
+
 const markupsText = [
   "/start",
   "Yangi_arizalar",
@@ -111,6 +106,9 @@ const changeVacanciesStatusForAdmins = (chatId, step, item, value) => {
       perpage: 4,
       formData: { ...defaultFormData },
     };
+    const { formData } = VS[chatId];
+    formData[item] = value;
+    VS[chatId].step = step;
   }
 };
 let firstFalsyKey = null;
@@ -146,6 +144,7 @@ bot.on("message", async (msg) => {
   try {
     const chatId = msg.chat.id;
     const question = await functions.fetchQuestion(chatId);
+    const vacstep = localStorage.getItem("vacstep");
     genericStep(question);
     functions
       .fetchQuestion(chatId)
@@ -257,21 +256,18 @@ bot.on("message", async (msg) => {
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "title") {
+        } else if (msg.text && vacstep === "title") {
           try {
-            changeVacanciesStatusForAdmins(chatId, "office", "title", msg.text);
+            functions.addToVacancies(bot, chatId, "title", msg.text);
+            localStorage.setItem("vacstep", "office");
             await bot.sendMessage(chatId, "Offis momini kiriting");
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "office") {
+        } else if (msg.text && vacstep === "office") {
           try {
-            changeVacanciesStatusForAdmins(
-              chatId,
-              "workingtime",
-              "office",
-              msg.text
-            );
+            functions.addToVacancies(bot, chatId, "office", msg.text);
+            localStorage.setItem("vacstep", "workingtime");
             await bot.sendMessage(
               chatId,
               "Ish vaqtini kiriting, masalan: 08 00 dan 16 00 gacha yoki sizning variantingiz"
@@ -279,26 +275,18 @@ bot.on("message", async (msg) => {
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "workingtime") {
+        } else if (msg.text && vacstep === "workingtime") {
           try {
-            changeVacanciesStatusForAdmins(
-              chatId,
-              "salary",
-              "workingtime",
-              msg.text
-            );
+            functions.addToVacancies(bot, chatId, "workingtime", msg.text);
+            localStorage.setItem("vacstep", "salary");
             await bot.sendMessage(chatId, "Ushbu ish uchun maoshni kiriting");
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "salary") {
+        } else if (msg.text && vacstep === "salary") {
           try {
-            changeVacanciesStatusForAdmins(
-              chatId,
-              "vacanciesCode",
-              "salary",
-              msg.text
-            );
+            functions.addToVacancies(bot, chatId, "salary", msg.text);
+            localStorage.setItem("vacstep", "vacanciesCode");
             await bot.sendMessage(
               chatId,
               "Iltimos vakansiyaga mos soxani tanlang",
@@ -307,15 +295,10 @@ bot.on("message", async (msg) => {
           } catch (error) {
             console.log(error);
           }
-        } else if (msg.text && VS[chatId]?.step === "description") {
+        } else if (msg.text && vacstep === "description") {
           try {
-            changeVacanciesStatusForAdmins(
-              chatId,
-              "photo",
-              "description",
-              msg.text
-            );
-            console.log(VS[chatId]);
+            functions.addToVacancies(bot, chatId, "description", msg.text);
+            localStorage.setItem("vacstep", "photo");
             await bot.sendMessage(
               chatId,
               "Vakansiyaga mos keladigan surat yuklang (surat tipi 'JPG' ekanligiga ishonch hosil qiling)"
@@ -325,13 +308,13 @@ bot.on("message", async (msg) => {
           }
         } else {
           try {
-            const isTextValid = markupsText.includes(msg.text);
+            // const isTextValid = markupsText.includes(msg.text);
             // if (!isTextValid) {
             //   const step = res?.step;
             //   if (step === "photo") {
             //     await bot.deleteMessage(chatId, msg.message_id);
-            //   } else if (VS[chatId]?.step == "photo") {
-            //     console.log(VS[chatId]);
+            //   } else if (vacstep == "photo") {
+            //     console.log("else msg da");
             //   } else {
             //     await bot.deleteMessage(chatId, msg.message_id);
             //     await bot.sendMessage(
@@ -441,13 +424,13 @@ bot.onText(/Amaldagi_vakansiyalar/, async (msg) => {
 bot.onText(/Vakansiya_yaratish/, async (msg) => {
   try {
     const chatId = msg.chat.id;
-    // await bot.deleteMessage(chatId, msg.message_id);
+    functions.createVacanciesTest(chatId);
     await bot.sendMessage(
       chatId,
       "Vacansiya nomini (sarlavhani) kiriting",
       remove
     );
-    changeVacanciesStatusForAdmins(chatId, "title");
+    localStorage.setItem("vacstep", "title");
   } catch (error) {
     console.error("An error occurred:", error);
   }
@@ -631,12 +614,8 @@ bot.on("callback_query", async (msg) => {
           await bot.sendMessage(chatId, "Iltimos Resume yuklang");
         } else if (data.command == "vacanciesCode") {
           await bot.deleteMessage(chatId, msg.message.message_id);
-          changeVacanciesStatusForAdmins(
-            chatId,
-            "description",
-            "code",
-            data.value
-          );
+          localStorage.setItem("vacstep", "description");
+          functions.addToVacancies(bot, chatId, "code", data.value);
           await bot.sendMessage(chatId, "Vakansiya uchun tavsif yozing");
           //   await functions.sendingVacanciesAll(bot, chatId);
         } else if (data.command == "men" || data == "women") {
@@ -808,8 +787,8 @@ bot.on("callback_query", async (msg) => {
         } else if (data.command == "vacanCode") {
           try {
             await bot.deleteMessage(chatId, msg.message.message_id);
-            changeVacanciesStatusForAdmins(chatId, "photo", "code", data.value);
-            console.log(VS[chatId]);
+            localStorage.setItem("vacstep", "description");
+            functions.addToVacancies(bot, chatId, "code", data.value);
             await bot.sendMessage(
               chatId,
               "Vakansiyaga mos keladigan rasim yuklang. Rasim kengaytmasi 'jpg' ekanligiga etibor berig! Masalan: rasim.jpg"
@@ -821,18 +800,13 @@ bot.on("callback_query", async (msg) => {
           try {
             await bot.deleteMessage(chatId, msg.message.message_id);
             if (data.value == "save") {
-              changeVacanciesStatusForAdmins(
-                chatId,
-                "finished",
-                "active",
-                true
-              );
-              functions.createVacancies(bot, chatId, VS[chatId].formData);
+              functions.addToVacancies(bot, chatId, "status", "finished");
               await bot.sendMessage(
                 chatId,
                 "Vakansiyaga muvafaqqiyatli yaratildi",
                 adminHome
               );
+              localStorage.setItem("vacstep", "start");
             } else {
               await bot.sendMessage(
                 chatId,
@@ -879,236 +853,9 @@ bot.on("callback_query", async (msg) => {
 
 // // ====================photo=====================================
 
-bot.on("photo", async (msg) => {
-  try {
-    const chatId = msg.chat.id;
-    const photoId = msg.photo[msg.photo.length - 1].file_id;
-    await Questionnaire.findOne({ chatId: chatId, status: "unfinished" })
-      .sort({ createdAt: -1 })
-      .limit(1)
-      .then((res) => {
-        if (res?.step == "photo") {
-          bot.getFile(photoId).then((fileInfo) => {
-            const file_type = fileInfo.file_path.split(".").pop();
-            const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
-            const directoryPath = path.join(__dirname, "photos");
-            if (!fs.existsSync(directoryPath)) {
-              fs.mkdirSync(directoryPath, { recursive: true });
-            }
-            const filename = fileInfo.file_unique_id
-              .replace(/[0-9]/g, "")
-              .replace(/[^A-Za-z]/g, "");
-            const filePath = path.join(
-              directoryPath,
-              `${filename}.${file_type}`
-            );
-            functions.updateQuestion(
-              res._id,
-              "step",
-              "start",
-              "photo",
-              filePath
-            );
-            const fileStream = fs.createWriteStream(filePath);
-
-            https.get(fileUrl, (response) => {
-              response.pipe(fileStream);
-              fileStream.on("finish", async () => {
-                try {
-                  await bot.sendPhoto(chatId, filePath, {
-                    caption:
-                      `👤Sizning ma'lumotlaringiz.` +
-                      "\n\n" +
-                      `-Ismi: ${res.fullName}` +
-                      "\n" +
-                      `-Yoshi: ${res.age}` +
-                      "\n" +
-                      `-Manzili: ${res.address}` +
-                      "\n" +
-                      `-Tel: ${res.phone}` +
-                      "\n" +
-                      `-Qayerda o'qigani: ${res.whereDidYouStudy}` +
-                      "\n" +
-                      `-Qayerda ishlagani: ${res.whereDidYouWork}` +
-                      "\n" +
-                      `-Ariza holati: ${
-                        res.status === "cancellation"
-                          ? "Arizangiz bekorqilindi"
-                          : res.status === "interview"
-                          ? "Siz suxbatga chaqirildingiz"
-                          : res.status === "hiring"
-                          ? "Siz ishga qabul qilindingiz"
-                          : "Ko'rib chiqilishi kutilmoqda"
-                      }`,
-                    reply_markup: JSON.stringify({
-                      inline_keyboard: [
-                        [
-                          {
-                            text: "Saqlash",
-                            callback_data: JSON.stringify({
-                              command: "save",
-                              value: "Saqlash",
-                            }),
-                          },
-                          {
-                            text: "Taxrirlash",
-                            callback_data: JSON.stringify({
-                              command: "reform",
-                              value: "Taxrirlash",
-                            }),
-                          },
-                        ],
-                      ],
-                    }),
-                  });
-                } catch (error) {
-                  console.error("Error during bot operations:", error);
-                } finally {
-                  // Close the file stream
-                  fileStream.close();
-                }
-              });
-
-              // Handle errors during the file download"photo"
-              response.on("error", (error) => {
-                console.error("Error downloading file:", error);
-                fileStream.close();
-              });
-            });
-          });
-        } else if (VS[chatId] && VS[chatId].step == "photo") {
-          bot.getFile(photoId).then((fileInfo) => {
-            const file_type = fileInfo.file_path.split(".").pop();
-            const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
-            const directoryPath = path.join(__dirname, "photos");
-            if (!fs.existsSync(directoryPath)) {
-              fs.mkdirSync(directoryPath, { recursive: true });
-            }
-
-            const filename = fileInfo.file_unique_id
-              .replace(/[0-9]/g, "")
-              .replace(/[^A-Za-z]/g, "");
-            const filePath = path.join(
-              directoryPath,
-              `${filename}.${file_type}`
-            );
-
-            changeVacanciesStatusForAdmins(chatId, "photo", "image", filePath);
-            const fileStream = fs.createWriteStream(filePath);
-
-            https.get(fileUrl, (response) => {
-              response.pipe(fileStream);
-              fileStream.on("finish", async () => {
-                try {
-                  await bot.sendPhoto(chatId, filePath, {
-                    caption:
-                      " \n\n" +
-                      `${VS[chatId].formData.title}` +
-                      "\n\n" +
-                      `- Idora nomi: ${VS[chatId].formData.office}` +
-                      "\n\n" +
-                      `-Ish vaqti: ${VS[chatId].formData.workingtime}` +
-                      "\n\n" +
-                      `- Maosh: ${VS[chatId].formData.salary}` +
-                      "\n\n" +
-                      `- Izoh: ${VS[chatId].formData.description}`,
-                    reply_markup: JSON.stringify({
-                      inline_keyboard: [
-                        [
-                          {
-                            text: "Saqlash",
-                            callback_data: JSON.stringify({
-                              command: "newVacancies",
-                              value: "save",
-                            }),
-                          },
-                          {
-                            text: "Bekor qilish",
-                            callback_data: JSON.stringify({
-                              command: "newVacancies",
-                              value: "cancellation",
-                            }),
-                          },
-                        ],
-                      ],
-                    }),
-                  });
-                } catch (error) {
-                  console.error("Error during bot operations:", error);
-                } finally {
-                  // Close the file stream
-                  fileStream.close();
-                }
-              });
-
-              // Handle errors during the file download
-              response.on("error", (error) => {
-                console.error("Error downloading file:", error);
-                fileStream.close();
-              });
-            });
-          });
-        } else {
-          bot.deleteMessage(chatId, msg.message_id);
-        }
-      });
-  } catch (error) {
-    console.log(error);
-  }
-});
+bot.on("photo", async (msg) => handlePhoto(bot, msg, VS));
 
 // ======================document==================================
-bot.on("document", (msg) => {
-  try {
-    const chatId = msg.chat.id;
-    const fileId = msg.document.file_id;
-    const file_type = msg.document.file_name.split(".").pop();
-    const file_name = msg.document.file_name.split(".").shift();
-    bot
-      .getFile(fileId)
-      .then((fileInfo) => {
-        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
-        const directoryPath = "./documents";
-        const filePath = path.join(directoryPath, `${file_name}.${file_type}`);
-        if (!fs.existsSync(directoryPath)) {
-          fs.mkdirSync(directoryPath, { recursive: true });
-        }
-        const writeStream = fs.createWriteStream(filePath);
-        https.get(fileUrl, (response) => {
-          response.pipe(writeStream);
-          writeStream.on("finish", () => {
-            functions.addToQuestion(
-              chatId,
-              "documentPath",
-              `${file_name}.${file_type}`
-            );
-            functions.addToQuestion(chatId, "document", true);
-            bot.sendMessage(
-              chatId,
-              `Fayil muvofaqqiyatli saqlandi tez orada siz bila bog'lanamiz.`
-            );
-          });
-        });
-      })
-      .catch((error) => {
-        bot.sendMessage(chatId, "Error downloading document.");
-      });
-  } catch (error) {
-    console.log(error);
-  }
-});
-
-// Xatolarni qayta ishlash va qayta urinish mexanizmiga misol
-bot.on("polling_error", (error) => {
-  try {
-    console.error(`Polling error: ${error.message}`);
-    // Qayta urinish mantiqini shu yerda amalga oshiring
-    setTimeout(() => {
-      bot.startPolling();
-    }, 5000); // 5 soniyadan keyin qayta urinib ko'ring
-  } catch (error) {
-    console.log(error);
-  }
-});
+bot.on("document", (msg) => handleDocument(bot, msg));
 
 module.exports = app;

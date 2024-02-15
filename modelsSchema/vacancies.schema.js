@@ -10,6 +10,8 @@ const VacanciesSchema = mongoose.Schema(
     code: { type: String },
     image: { type: String },
     active: { type: Boolean },
+    status: { type: String },
+    chatId: { type: String },
   },
   { timestamps: true }
 );
