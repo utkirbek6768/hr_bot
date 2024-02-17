@@ -1,3 +1,6 @@
+const fs = require("fs");
+const https = require("https");
+const path = require("path");
 const moment = require("moment");
 const Condidates = require("../modelsSchema/condidates.schema.js");
 const Questionnaire = require("../modelsSchema/questionnaire.schema.js");
@@ -77,7 +80,7 @@ const createVacanciesTest = async (chatId) => {
       description: "",
       code: "",
       image: "",
-      active: true,
+      active: false,
       status: "unfinished",
       chatId: chatId,
     });
@@ -99,8 +102,13 @@ const addToVacancies = async (bot, chatId, item, value) => {
       Vacancies.findOne({ chatId: chatId, status: "unfinished" })
         .then(async (res) => {
           try {
-            console.log(res.image);
-            await bot.sendPhoto(chatId, res.image, {
+            const imageUrl = path.join(
+              path.dirname(__dirname),
+              "photos",
+              res.image
+            );
+
+            await bot.sendPhoto(chatId, imageUrl, {
               caption:
                 " \n\n" +
                 `${res.title}` +
@@ -173,6 +181,7 @@ const createVacancies = async (bot, chatId, data) => {
           active,
           image,
         } = res;
+        const imageUrl = path.join(path.dirname(__dirname), "photos", image);
         const CommandVacancies = "CV";
         const options = {
           caption:
@@ -210,7 +219,7 @@ const createVacancies = async (bot, chatId, data) => {
           }),
         };
 
-        await bot.sendPhoto(chatId, image, options);
+        await bot.sendPhoto(chatId, imageUrl, options);
       })
       .catch((err) => {
         console.log(err);
@@ -240,7 +249,7 @@ const updateVacancies = async (bot, chatId, id, item, value) => {
           image,
         } = res;
         const CommandVacancies = "CV";
-
+        const imageUrl = path.join(path.dirname(__dirname), "photos", image);
         const options = {
           caption:
             `${title}` +
@@ -277,7 +286,7 @@ const updateVacancies = async (bot, chatId, id, item, value) => {
           }),
         };
 
-        await bot.sendPhoto(chatId, image, options);
+        await bot.sendPhoto(chatId, imageUrl, options);
       });
   } catch (err) {
     console.log("bu error", err);
@@ -413,7 +422,12 @@ const myQuestion = async (bot, chatId) => {
       for (const el of questionnaires) {
         try {
           if (el.photo && el.photo.length > 0) {
-            msg = await bot.sendPhoto(chatId, el.photo, {
+            const imageUrl = path.join(
+              path.dirname(__dirname),
+              "photos",
+              el.photo
+            );
+            msg = await bot.sendPhoto(chatId, imageUrl, {
               caption:
                 `Sizning ${
                   el.for == "teacher" ? "Oilaviy apteka" : "Enter o'quv markazi"
@@ -459,6 +473,7 @@ const myQuestion = async (bot, chatId) => {
             });
           } else {
             // ${el.for == "taxi" ? "RoyalTaxi ga" : ""}
+
             msg = await bot.sendMessage(
               chatId,
               `Sizning amaldagi arizangiz` +
@@ -584,9 +599,10 @@ const issetPhone = async (bot, phoneNumber, chatId, dataQuestion) => {
 const sendingData = async (bot, collection, id, adminId) => {
   await collection.findOne({ _id: id }).then(async (res) => {
     const filePath = res.photo;
+    const imageUrl = path.join(path.dirname(__dirname), "photos", res.photo);
     try {
       if (filePath) {
-        await bot.sendPhoto(adminId, filePath, {
+        await bot.sendPhoto(adminId, imageUrl, {
           caption:
             `👨🏻‍💻Yangi ariza mavjud.` +
             "\n\n" +
@@ -755,7 +771,8 @@ const sendingVacancies = async (bot, chatId, code) => {
         result.forEach(async (res) => {
           const { title, office, workingtime, salary, description, image } =
             res;
-          await bot.sendPhoto(chatId, image, {
+          const imageUrl = path.join(path.dirname(__dirname), "photos", image);
+          await bot.sendPhoto(chatId, imageUrl, {
             caption:
               `${title}` +
               "\n\n" +
@@ -810,6 +827,7 @@ const sendingVacanciesAll = async (bot, chatId) => {
             active,
           } = res;
           const CommandVacancies = "CV";
+          const imageUrl = path.join(path.dirname(__dirname), "photos", image);
           const options = {
             caption:
               `${title}` +
@@ -847,7 +865,7 @@ const sendingVacanciesAll = async (bot, chatId) => {
               ],
             }),
           };
-          await bot.sendPhoto(chatId, image, options);
+          await bot.sendPhoto(chatId, imageUrl, options);
         }
       });
 
@@ -1039,7 +1057,7 @@ const sendToAdmins = async (bot, chatId, admins) => {
       .sort({ createdAt: -1 })
       .limit(1)
       .exec();
-
+    const imageUrl = path.join(path.dirname(__dirname), "photos", res.photo);
     if (res) {
       const filePath = res.photo;
       for (const adminId of admins) {
@@ -1108,7 +1126,7 @@ const sendToAdmins = async (bot, chatId, admins) => {
             }
           );
         } else {
-          await bot.sendPhoto(adminId, filePath, {
+          await bot.sendPhoto(adminId, imageUrl, {
             caption:
               `👨🏻‍💻Yangi ariza mavjud.` +
               "\n\n" +

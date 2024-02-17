@@ -796,16 +796,22 @@ bot.on("callback_query", async (msg) => {
           } catch (error) {
             console.log(error);
           }
-        } else if (data.command == "newVacancies") {
+        } else if (data.command === "newVacancies") {
           try {
             await bot.deleteMessage(chatId, msg.message.message_id);
-            if (data.value == "save") {
-              functions.addToVacancies(bot, chatId, "status", "finished");
+
+            if (data.value === "save") {
+              await Promise.all([
+                functions.addToVacancies(bot, chatId, "status", "finished"),
+                functions.addToVacancies(bot, chatId, "active", "true"),
+              ]);
+
               await bot.sendMessage(
                 chatId,
                 "Vakansiyaga muvafaqqiyatli yaratildi",
                 adminHome
               );
+
               localStorage.setItem("vacstep", "start");
             } else {
               await bot.sendMessage(
@@ -815,7 +821,12 @@ bot.on("callback_query", async (msg) => {
               );
             }
           } catch (error) {
-            console.log(error);
+            console.error("Error in 'newVacancies' command:", error);
+            await bot.sendMessage(
+              chatId,
+              "Serverbilan bog'liq xatolik sodir bo'ldi: iltimos /start buyurig'ini bosib botni qayta faollashtiring",
+              adminHome
+            );
           }
         } else if (data.command === "deleteVacancies") {
           try {
@@ -824,10 +835,26 @@ bot.on("callback_query", async (msg) => {
               _id: data.id,
             });
             if (deletedQuestionnaire) {
+              const imageUrl = path.join(
+                path.dirname(__dirname),
+                "hrbot",
+                "photos",
+                deletedQuestionnaire.image
+              );
+
               await bot.sendMessage(
                 chatId,
                 "Vakansiya muvofaqqiyatli o'chirildi"
               );
+
+              // Faylni o'chirish
+              fs.unlink(imageUrl, (err) => {
+                if (err) {
+                  console.error("User surati o'chirilmadi:", err);
+                  return;
+                }
+                console.log("User surati o'chirildi");
+              });
             } else {
               await bot.sendMessage(
                 chatId,

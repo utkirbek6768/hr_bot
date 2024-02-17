@@ -11,10 +11,13 @@ const Questionnaire = require("../modelsSchema/questionnaire.schema.js");
 
 const handlePhoto = async (bot, msg) => {
   try {
+    const hrbot = path.dirname(__dirname);
+    const src = path.join(path.dirname(__dirname), "photos");
     const chatId = msg.chat.id;
     const vacstep = localStorage.getItem("vacstep");
-
     const photoId = msg.photo[msg.photo.length - 1].file_id;
+    // await bot.getFile(photoId).then((fileInfo) => console.log(fileInfo));
+    // return;
     await Questionnaire.findOne({ chatId: chatId, status: "unfinished" })
       .sort({ createdAt: -1 })
       .limit(1)
@@ -23,13 +26,11 @@ const handlePhoto = async (bot, msg) => {
           bot.getFile(photoId).then((fileInfo) => {
             const file_type = fileInfo.file_path.split(".").pop();
             const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
-            const directoryPath = path.join(__dirname, "photos");
+            const directoryPath = path.join(hrbot, "photos");
             if (!fs.existsSync(directoryPath)) {
               fs.mkdirSync(directoryPath, { recursive: true });
             }
-            const filename = fileInfo.file_unique_id
-              .replace(/[0-9]/g, "")
-              .replace(/[^A-Za-z]/g, "");
+            const filename = fileInfo.file_unique_id.replace(/[^A-Za-z]/g, "");
             const filePath = path.join(
               directoryPath,
               `${filename}.${file_type}`
@@ -39,7 +40,7 @@ const handlePhoto = async (bot, msg) => {
               "step",
               "start",
               "photo",
-              filePath
+              `${filename}.${file_type}`
             );
             const fileStream = fs.createWriteStream(filePath);
 
@@ -112,25 +113,25 @@ const handlePhoto = async (bot, msg) => {
           await bot.getFile(photoId).then((fileInfo) => {
             const file_type = fileInfo.file_path.split(".").pop();
             const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileInfo.file_path}`;
-            const directoryPath = path.join(__dirname, "photos");
+            const directoryPath = path.join(hrbot, "photos");
             if (!fs.existsSync(directoryPath)) {
               fs.mkdirSync(directoryPath, { recursive: true });
             }
-
-            const filename = fileInfo.file_unique_id.replace(/[^\w]/g, "");
-
-            const filePath = path.join(
-              directoryPath,
-              `${filename}.${file_type}`
+            const filename = fileInfo.file_path.substring(
+              fileInfo.file_path.indexOf("/") + 1
             );
 
-            functions.addToVacancies(bot, chatId, "image", filePath);
+            // const filename = fileInfo.file_unique_id.replace(/[^A-Za-z]/g, "");
+
+            const filePath = path.join(directoryPath, filename);
+
             const fileStream = fs.createWriteStream(filePath);
 
             https.get(fileUrl, (response) => {
               response.pipe(fileStream);
               fileStream.on("finish", async () => {
                 try {
+                  functions.addToVacancies(bot, chatId, "image", filename);
                 } catch (error) {
                   console.error("Error during bot operations:", error);
                 } finally {
@@ -147,7 +148,7 @@ const handlePhoto = async (bot, msg) => {
             });
           });
         } else {
-          bot.deleteMessage(chatId, msg.message_id);
+          await bot.deleteMessage(chatId, msg.message_id);
         }
       });
   } catch (error) {
